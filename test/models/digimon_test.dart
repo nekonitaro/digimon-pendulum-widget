@@ -69,5 +69,36 @@ void main() {
       expect(digimon.level, 1);
       expect(digimon.coins, 5);
     });
+
+test('JSONに変換できる', () {
+      final digimon = Digimon(id: '1', name: 'アグモン');
+      digimon.addCoins(15);
+      digimon.levelUp();
+      
+      final json = digimon.toJson();
+      
+      expect(json['id'], '1');
+      expect(json['name'], 'アグモン');
+      expect(json['level'], 2);
+      expect(json['coins'], 5);
+    });
+
+    test('JSONから復元できる', () {
+      final json = {
+        'id': '1',
+        'name': 'アグモン',
+        'level': 3,
+        'coins': 25,
+      };
+      
+      final digimon = Digimon.fromJson(json);
+      
+      expect(digimon.id, '1');
+      expect(digimon.name, 'アグモン');
+      expect(digimon.level, 3);
+      expect(digimon.coins, 25);
+    });
+
+    
   });
 }

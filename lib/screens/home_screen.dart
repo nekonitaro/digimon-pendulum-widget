@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/digimon.dart';
+import '../services/storage_service.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,30 +12,54 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Digimon _digimon;
+  final StorageService _storageService = StorageService();
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _digimon = Digimon(
-      id: '1',
-      name: 'アグモン',
-    );
+    _loadDigimon();
+  }
+
+  // デジモンを読み込み
+  Future<void> _loadDigimon() async {
+    final savedDigimon = await _storageService.loadDigimon();
+    
+    setState(() {
+      _digimon = savedDigimon ?? Digimon(id: '1', name: 'アグモン');
+      _isLoading = false;
+    });
+  }
+
+  // デジモンを保存
+  Future<void> _saveDigimon() async {
+    await _storageService.saveDigimon(_digimon);
   }
 
   void _addCoin() {
     setState(() {
       _digimon.addCoins(1);
     });
+    _saveDigimon(); // 保存
   }
 
   void _levelUp() {
     setState(() {
       _digimon.levelUp();
     });
+    _saveDigimon(); // 保存
   }
 
   @override
   Widget build(BuildContext context) {
+    // ローディング中の表示
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('デジモン育成'),

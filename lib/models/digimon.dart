@@ -35,4 +35,24 @@ class Digimon {
       coins += amount;
     }
   }
+
+  /// JSONに変換
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'level': level,
+      'coins': coins,
+    };
+  }
+
+  /// JSONから復元
+  factory Digimon.fromJson(Map<String, dynamic> json) {
+    return Digimon(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      level: json['level'] as int? ?? 1,
+      coins: json['coins'] as int? ?? 0,
+    );
+  }
 }
