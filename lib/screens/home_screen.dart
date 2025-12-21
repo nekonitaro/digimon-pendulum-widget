@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/digimon.dart';
 import '../services/storage_service.dart';
-
+import '../widgets/digimon_sprite.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -71,14 +71,12 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // デジモン名
-              Text(
-                _digimon.name,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+  // デジモンスプライト
+  DigimonSprite(
+    name: _digimon.name,
+    level: _digimon.level,
+  ),
+  const SizedBox(height: 40),
               const SizedBox(height: 40),
               
               // レベル表示

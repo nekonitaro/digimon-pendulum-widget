@@ -36,6 +36,10 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   
+  # アセット追加
+  assets:
+    - assets/sprites/
+
   # アセット（後で追加）
   # assets:
   #   - assets/images/
