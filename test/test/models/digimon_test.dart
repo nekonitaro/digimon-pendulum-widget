@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:digimon_pendulum/models/digimon.dart';
 
 
-//まあだ途中aaaa
+//まあだ途中aaaaaaaaaaaaa
 
 
 void main() {

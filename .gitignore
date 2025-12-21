@@ -5,9 +5,17 @@
 *.swp
 .DS_Store
 .atom/
+<<<<<<< HEAD
 .buildlog/
 .history
 .svn/
+=======
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+>>>>>>> e6ed669dd0f8d88b77cb4ce65f7dc222ccc55130
 migrate_working_dir/
 
 # IntelliJ related
@@ -19,18 +27,30 @@ migrate_working_dir/
 # The .vscode folder contains launch configuration and tasks you configure in
 # VS Code which you may wish to be included in version control, so this line
 # is commented out by default.
+<<<<<<< HEAD
 .vscode/
+=======
+#.vscode/
+>>>>>>> e6ed669dd0f8d88b77cb4ce65f7dc222ccc55130
 
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+<<<<<<< HEAD
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
 .pub-cache/
 .pub/
 /build/
+=======
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+>>>>>>> e6ed669dd0f8d88b77cb4ce65f7dc222ccc55130
 
 # Symbolication related
 app.*.symbols
@@ -42,6 +62,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+<<<<<<< HEAD
 
 # 環境変数（追加推奨）
 .env
@@ -72,3 +93,5 @@ local.properties
 DerivedData/
 Podfile.lock  # プロジェクト方針によりますが、通常は含めます
 Pods/
+=======
+>>>>>>> e6ed669dd0f8d88b77cb4ce65f7dc222ccc55130
