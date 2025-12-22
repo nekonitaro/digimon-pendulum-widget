@@ -21,14 +21,19 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadDigimon();
   }
 
-  // デジモンを読み込み
+ // デジモンを読み込み
   Future<void> _loadDigimon() async {
     final savedDigimon = await _storageService.loadDigimon();
     
     setState(() {
       _digimon = savedDigimon ?? Digimon(id: '1', name: 'アグモン');
+      // 時間経過による状態更新
+      _digimon.updateByTimePassed();
       _isLoading = false;
     });
+    
+    // 更新後の状態を保存
+    _saveDigimon();
   }
 
   // デジモンを保存
@@ -49,6 +54,21 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     _saveDigimon(); // 保存
   }
+
+void _cleanPoop() {
+    setState(() {
+      _digimon.cleanPoop();
+    });
+    _saveDigimon();
+  }
+
+  void _interact() {
+    setState(() {
+      _digimon.interact();
+    });
+    _saveDigimon();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +107,15 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildInfoRow('コイン', '${_digimon.coins}'),
               const SizedBox(height: 16),
               
+              // 機嫌表示（追加）
+              _buildInfoRow('機嫌', '${_digimon.mood}', 
+                color: _getMoodColor()),
+              const SizedBox(height: 16),
+              
+              // 糞表示（追加）
+              _buildInfoRow('うんち', '${'💩' * _digimon.poopCount}'),
+              const SizedBox(height: 16),
+              
               // 次のレベルアップに必要なコイン
               _buildInfoRow(
                 '次のレベルまで',
@@ -108,6 +137,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+
+              
               
               // レベルアップボタン
               ElevatedButton.icon(
@@ -123,6 +154,39 @@ class _HomeScreenState extends State<HomeScreen> {
                   backgroundColor: Colors.green,
                 ),
               ),
+const SizedBox(height: 20),
+              
+              // 糞掃除ボタン（追加）
+              ElevatedButton.icon(
+                onPressed: _digimon.poopCount > 0 ? _cleanPoop : null,
+                icon: const Icon(Icons.cleaning_services),
+                label: const Text('うんち掃除'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  textStyle: const TextStyle(fontSize: 18),
+                  backgroundColor: Colors.brown,
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // 触れ合いボタン（追加）
+              ElevatedButton.icon(
+                onPressed: _interact,
+                icon: const Icon(Icons.favorite),
+                label: const Text('なでなで'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  textStyle: const TextStyle(fontSize: 18),
+                  backgroundColor: Colors.pink,
+                ),
+              ),
+
             ],
           ),
         ),
@@ -130,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, {Color? color}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -143,13 +207,24 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.blue,
+            color: color ?? Colors.blue,
           ),
         ),
       ],
     );
+  }
+
+  // 機嫌に応じた色を取得
+  Color _getMoodColor() {
+    if (_digimon.mood >= 70) {
+      return Colors.green;
+    } else if (_digimon.mood >= 40) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
   }
 }

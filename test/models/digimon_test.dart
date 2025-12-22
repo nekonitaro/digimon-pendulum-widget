@@ -99,6 +99,52 @@ test('JSONに変換できる', () {
       expect(digimon.coins, 25);
     });
 
+test('機嫌の初期値は100', () {
+      final digimon = Digimon(id: '1', name: 'アグモン');
+      
+      expect(digimon.mood, 100);
+    });
+
+    test('糞の初期値は0', () {
+      final digimon = Digimon(id: '1', name: 'アグモン');
+      
+      expect(digimon.poopCount, 0);
+    });
+
+    test('糞を追加できる', () {
+      final digimon = Digimon(id: '1', name: 'アグモン');
+      
+      digimon.addPoop();
+      
+      expect(digimon.poopCount, 1);
+    });
+
+    test('糞をクリーンできる', () {
+      final digimon = Digimon(id: '1', name: 'アグモン');
+      digimon.addPoop();
+      digimon.addPoop();
+      
+      digimon.cleanPoop();
+      
+      expect(digimon.poopCount, 0);
+    });
+
+    test('糞が3個以上で機嫌が悪化する', () {
+      final digimon = Digimon(id: '1', name: 'アグモン');
+      
+      digimon.addPoop();
+      digimon.addPoop();
+      digimon.addPoop();
+      
+      expect(digimon.mood, lessThan(100));
+    });
+
+    test('最終更新日時が記録される', () {
+      final digimon = Digimon(id: '1', name: 'アグモン');
+      
+      expect(digimon.lastUpdated, isNotNull);
+    });
+
     
   });
 }
