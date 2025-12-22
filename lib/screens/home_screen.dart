@@ -29,6 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _digimon = savedDigimon ?? Digimon(id: '1', name: 'アグモン');
       // 時間経過による状態更新
       _digimon.updateByTimePassed();
+
+
+
+      
       _isLoading = false;
     });
     
