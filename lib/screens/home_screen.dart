@@ -31,8 +31,13 @@ class _HomeScreenState extends State<HomeScreen> {
       _digimon.updateByTimePassed();
 
 
+      // テスト用：糞を2個追加
+      _digimon.addPoop();
+      _digimon.addPoop();
+      _digimon.addPoop();
+      _digimon.addPoop();
 
-      
+
       _isLoading = false;
     });
     
@@ -125,7 +130,7 @@ void _cleanPoop() {
                 '次のレベルまで',
                 '${_digimon.getRequiredCoinsForLevelUp()} コイン',
               ),
-              const SizedBox(height: 60),
+              const SizedBox(height: 20),
               
               // コインをもらうボタン
               ElevatedButton.icon(
@@ -232,3 +237,4 @@ const SizedBox(height: 20),
     }
   }
 }
+
