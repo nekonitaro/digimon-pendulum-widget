@@ -7,7 +7,9 @@ import 'package:home_widget/home_widget.dart';
 import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final Uri? initialUri;
+  
+  const HomeScreen({super.key, this.initialUri});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -19,16 +21,33 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   StreamSubscription<Uri?>? _widgetClickSubscription; // 追加
 
-  @override
+ @override
   void initState() {
     super.initState();
     _loadDigimon();
     WidgetService.registerCallbacks();
-
+    
+    // 初期URIの処理
+    if (widget.initialUri != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleWidgetClick(widget.initialUri);
+      });
+    }
+    
     // ウィジェットクリックを監視
-    _widgetClickSubscription = HomeWidget.widgetClicked.listen(
-      _handleWidgetClick,
-    );
+    _widgetClickSubscription = HomeWidget.widgetClicked.listen(_handleWidgetClick);
+    
+    // 手動でチェック（追加）
+    _checkPendingAction();
+  }
+  
+  // 追加
+  Future<void> _checkPendingAction() async {
+    final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
+    if (uri != null) {
+      debugPrint('保留アクション検出: $uri');
+      _handleWidgetClick(uri);
+    }
   }
 
   @override
@@ -37,12 +56,12 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // ウィジェットクリック処理
+ // ウィジェットクリック処理
   void _handleWidgetClick(Uri? uri) {
     if (uri == null) return;
-
+    
     debugPrint('ウィジェットクリック: ${uri.host}'); // デバッグ用
-
+    
     setState(() {
       if (uri.host == 'addcoin') {
         _digimon.addCoins(1);
@@ -57,7 +76,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
   }
-
   // スナックバー表示
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -70,28 +88,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // デジモンを読み込み
   Future<void> _loadDigimon() async {
     final savedDigimon = await _storageService.loadDigimon();
-
+    
     setState(() {
       _digimon = savedDigimon ?? Digimon(id: '1', name: 'アグモン');
-
-      // テスト用：時間を10分前に設定
-      _digimon.adventure.lastCoinTime = DateTime.now().subtract(
-        const Duration(minutes: 10),
-      );
-      _digimon.adventure.lastEnemyTime = DateTime.now().subtract(
-        const Duration(minutes: 20),
-      );
-
-      _digimon.addPoop();
-      _digimon.addPoop();
-      _digimon.addPoop();
-
-
       _digimon.updateByTimePassed();
       _isLoading = false;
     });
-
-    _saveDigimon();
+    
+    _saveDigimon(); // 追加（起動時にウィジェット更新）
   }
 
   // デジモンを保存

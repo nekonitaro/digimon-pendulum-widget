@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import 'screens/home_screen.dart';
 import 'services/widget_service.dart';
@@ -9,22 +10,22 @@ void main() async {
   // ウィジェットのコールバック登録
   await WidgetService.registerCallbacks();
   
-  // ウィジェットからの起動を監視
-  HomeWidget.widgetClicked.listen(_onWidgetClicked);
+  // 初期URLをチェック
+  final initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
+  debugPrint('main.dart: 初期URI = $initialUri');
   
-  runApp(const MyApp());
-}
-
-// ウィジェットクリック時の処理
-void _onWidgetClicked(Uri? uri) {
-  if (uri != null) {
-    debugPrint('ウィジェットクリック: ${uri.host}');
-    // この処理は後でHomeScreenで実装
-  }
+  // ウィジェットクリックのストリームを監視
+  HomeWidget.widgetClicked.listen((uri) {
+    debugPrint('main.dart: ウィジェットクリック検出 - $uri');
+  });
+  
+  runApp(MyApp(initialUri: initialUri));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final Uri? initialUri;
+  
+  const MyApp({super.key, this.initialUri});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: HomeScreen(initialUri: initialUri),
       debugShowCheckedModeBanner: false,
     );
   }
