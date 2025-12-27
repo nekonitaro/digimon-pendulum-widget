@@ -1,3 +1,6 @@
+import 'adventure.dart';
+
+
 class Digimon {
   final String id;
   final String name;
@@ -6,8 +9,10 @@ class Digimon {
   int mood;           // 機嫌 (0-100)
   int poopCount;      // 糞の数
   DateTime lastUpdated; // 最終更新日時
+  Adventure adventure;  // 追加
 
-  Digimon({
+
+ Digimon({
     required this.id,
     required this.name,
     this.level = 1,
@@ -15,8 +20,9 @@ class Digimon {
     this.mood = 100,
     this.poopCount = 0,
     DateTime? lastUpdated,
-  }) : lastUpdated = lastUpdated ?? DateTime.now();
-
+    Adventure? adventure,  // 追加
+  }) : lastUpdated = lastUpdated ?? DateTime.now(),
+       adventure = adventure ?? Adventure();  // 追加
   /// レベルアップに必要なコイン数を計算
   int getRequiredCoinsForLevelUp() {
     return level * 10;
@@ -78,9 +84,13 @@ class Digimon {
   }
 
   /// 時間経過による状態更新
-  void updateByTimePassed() {
+void updateByTimePassed() {
     final now = DateTime.now();
     final hoursPassed = now.difference(lastUpdated).inHours;
+
+    // 冒険を更新（追加）
+    adventure.updateAdventure();
+
 
     // 2時間ごとに糞が1個増える
     final newPoops = hoursPassed ~/ 2;
@@ -109,6 +119,7 @@ class Digimon {
       'mood': mood,
       'poopCount': poopCount,
       'lastUpdated': lastUpdated.toIso8601String(),
+      'adventure': adventure.toJson(),  // 追加
     };
   }
 
@@ -124,6 +135,9 @@ class Digimon {
       lastUpdated: json['lastUpdated'] != null
           ? DateTime.parse(json['lastUpdated'] as String)
           : DateTime.now(),
+      adventure: json['adventure'] != null  // 追加
+          ? Adventure.fromJson(json['adventure'])
+          : Adventure(),
     );
   }
 }

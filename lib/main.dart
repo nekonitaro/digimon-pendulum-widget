@@ -18,7 +18,7 @@ void main() async {
 // ウィジェットクリック時の処理
 void _onWidgetClicked(Uri? uri) {
   if (uri != null) {
-    print('ウィジェットクリック: ${uri.host}');
+    debugPrint('ウィジェットクリック: ${uri.host}');
     // この処理は後でHomeScreenで実装
   }
 }

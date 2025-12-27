@@ -61,6 +61,20 @@
         android:layout_marginTop="4dp"
         android:textColor="#555555" />
 
+    
+    <!-- 冒険コイン -->
+    <TextView
+        android:id="@+id/widget_adventure_coins"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🪙 拾ったコイン: 0"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:layout_marginTop="4dp"
+        android:textColor="#FFA500" />
+
+
+
     <!-- ボタンエリア -->
     <LinearLayout
         android:layout_width="match_parent"
