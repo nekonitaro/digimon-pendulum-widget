@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
 import 'package:home_widget/home_widget.dart';
+import 'screens/home_screen.dart';
 import 'services/widget_service.dart';
 
 void main() async {
@@ -9,7 +9,18 @@ void main() async {
   // ウィジェットのコールバック登録
   await WidgetService.registerCallbacks();
   
+  // ウィジェットからの起動を監視
+  HomeWidget.widgetClicked.listen(_onWidgetClicked);
+  
   runApp(const MyApp());
+}
+
+// ウィジェットクリック時の処理
+void _onWidgetClicked(Uri? uri) {
+  if (uri != null) {
+    print('ウィジェットクリック: ${uri.host}');
+    // この処理は後でHomeScreenで実装
+  }
 }
 
 class MyApp extends StatelessWidget {

@@ -3,6 +3,8 @@ import '../models/digimon.dart';
 import '../services/storage_service.dart';
 import '../widgets/digimon_sprite.dart';
 import '../services/widget_service.dart';
+import 'package:home_widget/home_widget.dart';
+import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,13 +17,54 @@ class _HomeScreenState extends State<HomeScreen> {
   late Digimon _digimon;
   final StorageService _storageService = StorageService();
   bool _isLoading = true;
+  StreamSubscription<Uri?>? _widgetClickSubscription; // 追加
 
   @override
   void initState() {
     super.initState();
     _loadDigimon();
-    WidgetService.registerCallbacks(); // 追加
+    WidgetService.registerCallbacks();
+    
+    // ウィジェットクリックを監視
+    _widgetClickSubscription = HomeWidget.widgetClicked.listen(_handleWidgetClick);
   }
+
+  @override
+  void dispose() {
+    _widgetClickSubscription?.cancel(); // 追加
+    super.dispose();
+  }
+
+  // ウィジェットクリック処理
+  void _handleWidgetClick(Uri? uri) {
+    if (uri == null) return;
+    
+    setState(() {
+      if (uri.host == 'addcoin') {
+        _digimon.addCoins(1);
+        _saveDigimon();
+        _showSnackBar('コインを1枚もらった！');
+      } else if (uri.host == 'cleanpoop') {
+        if (_digimon.poopCount > 0) {
+          _digimon.cleanPoop();
+          _saveDigimon();
+          _showSnackBar('うんちを掃除した！');
+        }
+      }
+    });
+  }
+
+  // スナックバー表示
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // 既存のメソッドはそのまま
 
  // デジモンを読み込み
   Future<void> _loadDigimon() async {
