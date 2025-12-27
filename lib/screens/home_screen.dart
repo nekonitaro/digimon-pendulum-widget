@@ -41,6 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleWidgetClick(Uri? uri) {
     if (uri == null) return;
 
+    debugPrint('ウィジェットクリック: ${uri.host}'); // デバッグ用
+
     setState(() {
       if (uri.host == 'addcoin') {
         _digimon.addCoins(1);
@@ -80,6 +82,11 @@ class _HomeScreenState extends State<HomeScreen> {
         const Duration(minutes: 20),
       );
 
+      _digimon.addPoop();
+      _digimon.addPoop();
+      _digimon.addPoop();
+
+
       _digimon.updateByTimePassed();
       _isLoading = false;
     });
@@ -90,7 +97,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // デジモンを保存
   Future<void> _saveDigimon() async {
     await _storageService.saveDigimon(_digimon);
-    await WidgetService.updateWidget(_digimon); // 追加
+    debugPrint('ウィジェット更新: レベル${_digimon.level}, コイン${_digimon.coins}');
+    await WidgetService.updateWidget(_digimon);
   }
 
   void _addCoin() {
@@ -134,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
-             // mainAxisAlignment: MainAxisAlignment.center,
+              // mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // デジモンスプライト
                 DigimonSprite(name: _digimon.name, level: _digimon.level),
