@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 
 class DeepLinkService {
   static const platform = MethodChannel('digimon.deeplink');
@@ -8,7 +9,7 @@ class DeepLinkService {
       final String? link = await platform.invokeMethod('getInitialLink');
       return link;
     } catch (e) {
-      print('getInitialLink エラー: $e');
+      debugPrint('getInitialLink エラー: $e');
       return null;
     }
   }

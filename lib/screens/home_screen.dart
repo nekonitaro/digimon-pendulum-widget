@@ -3,7 +3,7 @@ import '../models/digimon.dart';
 import '../services/storage_service.dart';
 import '../widgets/digimon_sprite.dart';
 import '../services/widget_service.dart';
-import 'package:home_widget/home_widget.dart';
+
 import 'dart:async';
 import '../services/deep_link_service.dart';
 
@@ -36,13 +36,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   
   // 追加
-  Future<void> _checkPendingAction() async {
-    final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
-    if (uri != null) {
-      debugPrint('保留アクション検出: $uri');
-      _handleWidgetClick(uri);
-    }
-  }
+  // Future<void> _checkPendingAction() async {
+  //   final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
+  //   if (uri != null) {
+  //     debugPrint('保留アクション検出: $uri');
+  //     _handleWidgetClick(uri);
+  //   }
+  // }
 
   @override
   void dispose() {
