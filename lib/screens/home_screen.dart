@@ -5,6 +5,7 @@ import '../widgets/digimon_sprite.dart';
 import '../services/widget_service.dart';
 import 'package:home_widget/home_widget.dart';
 import 'dart:async';
+import '../services/deep_link_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final Uri? initialUri;
@@ -20,25 +21,18 @@ class _HomeScreenState extends State<HomeScreen> {
   final StorageService _storageService = StorageService();
   bool _isLoading = true;
   StreamSubscription<Uri?>? _widgetClickSubscription; // 追加
-
- @override
+  @override
   void initState() {
     super.initState();
     _loadDigimon();
     WidgetService.registerCallbacks();
     
-    // 初期URIの処理
-    if (widget.initialUri != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _handleWidgetClick(widget.initialUri);
-      });
-    }
-    
-    // ウィジェットクリックを監視
-    _widgetClickSubscription = HomeWidget.widgetClicked.listen(_handleWidgetClick);
-    
-    // 手動でチェック（追加）
-    _checkPendingAction();
+    // ディープリンク監視
+    DeepLinkService.linkStream.listen((link) {
+      debugPrint('ディープリンク受信: $link');
+      final uri = Uri.parse(link);
+      _handleWidgetClick(uri);
+    });
   }
   
   // 追加
