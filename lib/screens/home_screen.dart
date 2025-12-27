@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/digimon.dart';
 import '../services/storage_service.dart';
 import '../widgets/digimon_sprite.dart';
+import '../services/widget_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadDigimon();
+    WidgetService.registerCallbacks(); // 追加
   }
 
  // デジモンを読み込み
@@ -31,11 +33,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _digimon.updateByTimePassed();
 
 
-      // テスト用：糞を2個追加
-      _digimon.addPoop();
-      _digimon.addPoop();
-      _digimon.addPoop();
-      _digimon.addPoop();
+      // // テスト用：糞を2個追加
+      // _digimon.addPoop();
+      // _digimon.addPoop();
+      // _digimon.addPoop();
+      // _digimon.addPoop();
 
 
       _isLoading = false;
@@ -48,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // デジモンを保存
   Future<void> _saveDigimon() async {
     await _storageService.saveDigimon(_digimon);
+    await WidgetService.updateWidget(_digimon); // 追加
   }
 
   void _addCoin() {

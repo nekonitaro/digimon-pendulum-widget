@@ -16,7 +16,7 @@ dependencies:
   # ローカルストレージ
   shared_preferences: ^2.2.2
 
-
+  home_widget: 0.6.0
   
   # タイマー・時間管理
   intl: ^0.19.0

@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'package:home_widget/home_widget.dart';
+import 'services/widget_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // ウィジェットのコールバック登録
+  await WidgetService.registerCallbacks();
+  
   runApp(const MyApp());
 }
 
