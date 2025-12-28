@@ -1,5 +1,5 @@
 import 'adventure.dart';
-
+import 'evolution_stage.dart';
 
 class Digimon {
   final String id;
@@ -10,9 +10,11 @@ class Digimon {
   int poopCount;      // 糞の数
   DateTime lastUpdated; // 最終更新日時
   Adventure adventure;  // 追加
+  EvolutionStage evolutionStage;  // 追加
+int battleWins;    // 勝利数
+  int battleLosses;  // 敗北数
 
-
- Digimon({
+Digimon({
     required this.id,
     required this.name,
     this.level = 1,
@@ -20,9 +22,64 @@ class Digimon {
     this.mood = 100,
     this.poopCount = 0,
     DateTime? lastUpdated,
-    Adventure? adventure,  // 追加
+    Adventure? adventure,
+    this.evolutionStage = EvolutionStage.baby1,
+    this.battleWins = 0,     // 追加
+    this.battleLosses = 0,   // 追加
   }) : lastUpdated = lastUpdated ?? DateTime.now(),
-       adventure = adventure ?? Adventure();  // 追加
+       adventure = adventure ?? Adventure();
+
+/// 進化可能かチェック
+  bool canEvolve() {
+    final nextStage = evolutionStage.next;
+    if (nextStage == null) return false; // 最終形態
+    
+    // レベル条件
+    if (level < nextStage.requiredLevel) return false;
+    
+    // 機嫌条件
+    if (mood < 50) return false;
+    
+    // バトル勝利数条件（追加）
+    final requiredWins = nextStage.index * 2; // 段階ごとに2勝必要
+    if (battleWins < requiredWins) return false;
+    
+    return true;
+  }
+
+/// バトル勝利を記録
+  void recordWin(int coinsEarned) {
+    battleWins++;
+    addCoins(coinsEarned);
+    _updateTimestamp();
+  }
+
+  /// バトル敗北を記録
+  void recordLoss(int coinsEarned) {
+    battleLosses++;
+    addCoins(coinsEarned);
+    mood = (mood - 10).clamp(0, 100); // 負けると機嫌が下がる
+    _updateTimestamp();
+  }
+
+  /// 総バトル数
+  int get totalBattles => battleWins + battleLosses;
+
+  /// 勝率
+  double get winRate {
+    if (totalBattles == 0) return 0.0;
+    return (battleWins / totalBattles * 100);
+  }
+
+
+  /// 進化実行
+  void evolve() {
+    if (canEvolve()) {
+      evolutionStage = evolutionStage.next!;
+      _updateTimestamp();
+    }
+  }
+
   /// レベルアップに必要なコイン数を計算
   int getRequiredCoinsForLevelUp() {
     return level * 10;
@@ -108,9 +165,7 @@ void updateByTimePassed() {
 
     _updateTimestamp();
   }
-
-  /// JSONに変換
-  Map<String, dynamic> toJson() {
+Map<String, dynamic> toJson() {
     return {
       'id': id,
       'name': name,
@@ -119,11 +174,13 @@ void updateByTimePassed() {
       'mood': mood,
       'poopCount': poopCount,
       'lastUpdated': lastUpdated.toIso8601String(),
-      'adventure': adventure.toJson(),  // 追加
+      'adventure': adventure.toJson(),
+      'evolutionStage': evolutionStage.index,
+      'battleWins': battleWins,     // 追加
+      'battleLosses': battleLosses, // 追加
     };
   }
 
-  /// JSONから復元
   factory Digimon.fromJson(Map<String, dynamic> json) {
     return Digimon(
       id: json['id'] as String,
@@ -135,9 +192,14 @@ void updateByTimePassed() {
       lastUpdated: json['lastUpdated'] != null
           ? DateTime.parse(json['lastUpdated'] as String)
           : DateTime.now(),
-      adventure: json['adventure'] != null  // 追加
+      adventure: json['adventure'] != null
           ? Adventure.fromJson(json['adventure'])
           : Adventure(),
+      evolutionStage: json['evolutionStage'] != null
+          ? EvolutionStage.values[json['evolutionStage'] as int]
+          : EvolutionStage.baby1,
+      battleWins: json['battleWins'] as int? ?? 0,      // 追加
+      battleLosses: json['battleLosses'] as int? ?? 0,  // 追加
     );
   }
 }

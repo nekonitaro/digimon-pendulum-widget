@@ -11,11 +11,14 @@ class WidgetService {
       await HomeWidget.saveWidgetData('coins', digimon.coins);
       await HomeWidget.saveWidgetData('mood', digimon.mood);
       await HomeWidget.saveWidgetData('poopCount', digimon.poopCount);
-      
+
       // 冒険データ追加
-      await HomeWidget.saveWidgetData('adventureCoins', digimon.adventure.coinsCollected);
+      await HomeWidget.saveWidgetData(
+        'adventureCoins',
+        digimon.adventure.coinsCollected,
+      );
       await HomeWidget.saveWidgetData('distance', digimon.adventure.distance);
-      
+      await HomeWidget.saveWidgetData('battleWins', digimon.battleWins);
       await HomeWidget.updateWidget(
         name: 'HomeWidgetProvider',
         androidName: 'HomeWidgetProvider',
@@ -29,7 +32,7 @@ class WidgetService {
   static Future<void> registerCallbacks() async {
     // コイン追加のコールバック
     HomeWidget.setAppGroupId('digimon_widget_group');
-    
+
     HomeWidget.registerInteractivityCallback(backgroundCallback);
   }
 

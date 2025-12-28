@@ -6,10 +6,11 @@ import '../services/widget_service.dart';
 
 import 'dart:async';
 import '../services/deep_link_service.dart';
+import 'battle_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Uri? initialUri;
-  
+
   const HomeScreen({super.key, this.initialUri});
 
   @override
@@ -26,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadDigimon();
     WidgetService.registerCallbacks();
-    
+
     // ディープリンク監視
     DeepLinkService.linkStream.listen((link) {
       debugPrint('ディープリンク受信: $link');
@@ -34,7 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _handleWidgetClick(uri);
     });
   }
-  
+
   // 追加
   // Future<void> _checkPendingAction() async {
   //   final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
@@ -50,12 +51,12 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
- // ウィジェットクリック処理
+  // ウィジェットクリック処理
   void _handleWidgetClick(Uri? uri) {
     if (uri == null) return;
-    
+
     debugPrint('ウィジェットクリック: ${uri.host}'); // デバッグ用
-    
+
     setState(() {
       if (uri.host == 'addcoin') {
         _digimon.addCoins(1);
@@ -70,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
   }
+
   // スナックバー表示
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -82,14 +84,14 @@ class _HomeScreenState extends State<HomeScreen> {
   // デジモンを読み込み
   Future<void> _loadDigimon() async {
     final savedDigimon = await _storageService.loadDigimon();
-    
+
     setState(() {
       _digimon = savedDigimon ?? Digimon(id: '1', name: 'アグモン');
       _digimon.updateByTimePassed();
       _isLoading = false;
     });
-    
-    _saveDigimon(); // 追加（起動時にウィジェット更新）
+    // 強制的にウィジェット更新（追加）
+    await WidgetService.updateWidget(_digimon);
   }
 
   // デジモンを保存
@@ -143,12 +145,21 @@ class _HomeScreenState extends State<HomeScreen> {
               // mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // デジモンスプライト
-                DigimonSprite(name: _digimon.name, level: _digimon.level),
+                // デジモンスプライト
+                DigimonSprite(
+                  name: _digimon.name,
+                  level: _digimon.level,
+                  evolutionStage: _digimon.evolutionStage, // 追加
+                ),
                 const SizedBox(height: 40),
                 const SizedBox(height: 40),
 
                 // レベル表示
                 _buildInfoRow('レベル', '${_digimon.level}'),
+                const SizedBox(height: 16),
+
+                // 進化段階表示（追加）
+                _buildInfoRow('進化段階', _digimon.evolutionStage.displayName),
                 const SizedBox(height: 16),
 
                 // コイン表示
@@ -158,6 +169,40 @@ class _HomeScreenState extends State<HomeScreen> {
                 // 機嫌表示（追加）
                 _buildInfoRow('機嫌', '${_digimon.mood}', color: _getMoodColor()),
                 const SizedBox(height: 16),
+                // 糞表示（追加）
+                _buildInfoRow('うんち', '💩' * _digimon.poopCount),
+                const SizedBox(height: 16),
+
+ // 糞掃除ボタン（追加）
+                ElevatedButton.icon(
+                  onPressed: _digimon.poopCount > 0 ? _cleanPoop : null,
+                  icon: const Icon(Icons.cleaning_services),
+                  label: const Text('うんち掃除'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    textStyle: const TextStyle(fontSize: 18),
+                    backgroundColor: Colors.brown,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 触れ合いボタン（追加）
+                ElevatedButton.icon(
+                  onPressed: _interact,
+                  icon: const Icon(Icons.favorite),
+                  label: const Text('なでなで'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    textStyle: const TextStyle(fontSize: 18),
+                    backgroundColor: Colors.pink,
+                  ),
+                ),
 
                 // 冒険情報（追加）
                 const SizedBox(height: 24),
@@ -172,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildInfoRow('倒した敵', '${_digimon.adventure.enemiesDefeated}体'),
                 const SizedBox(height: 16),
 
-                // コイン回収ボタン
+// コイン回収ボタン
                 ElevatedButton.icon(
                   onPressed: _digimon.adventure.coinsCollected > 0
                       ? _collectAdventureCoins
@@ -186,9 +231,36 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 24),
                 const Divider(),
 
-                // 糞表示（追加）
-                _buildInfoRow('うんち', '💩' * _digimon.poopCount),
+
+                // バトル戦績（追加）
+                const Text(
+                  'バトル',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                _buildInfoRow('勝利', '${_digimon.battleWins}回'),
+                _buildInfoRow('敗北', '${_digimon.battleLosses}回'),
+                _buildInfoRow('勝率', '${_digimon.winRate.toStringAsFixed(1)}%'),
                 const SizedBox(height: 16),
+
+                // バトル開始ボタン（追加）
+                ElevatedButton.icon(
+                  onPressed: _startBattle,
+                  icon: const Icon(Icons.sports_martial_arts),
+                  label: const Text('バトル開始'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    textStyle: const TextStyle(fontSize: 18),
+                    backgroundColor: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Divider(),
+
+                
 
                 // 次のレベルアップに必要なコイン
                 _buildInfoRow(
@@ -228,36 +300,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // 糞掃除ボタン（追加）
+                // 進化ボタン（追加）
                 ElevatedButton.icon(
-                  onPressed: _digimon.poopCount > 0 ? _cleanPoop : null,
-                  icon: const Icon(Icons.cleaning_services),
-                  label: const Text('うんち掃除'),
+                  onPressed: _digimon.canEvolve() ? _evolve : null,
+                  icon: const Icon(Icons.auto_awesome),
+                  label: Text(_digimon.canEvolve() ? '進化する！' : '進化条件未達成'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 32,
                       vertical: 16,
                     ),
                     textStyle: const TextStyle(fontSize: 18),
-                    backgroundColor: Colors.brown,
+                    backgroundColor: Colors.purple,
                   ),
                 ),
-                const SizedBox(height: 20),
 
-                // 触れ合いボタン（追加）
-                ElevatedButton.icon(
-                  onPressed: _interact,
-                  icon: const Icon(Icons.favorite),
-                  label: const Text('なでなで'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    textStyle: const TextStyle(fontSize: 18),
-                    backgroundColor: Colors.pink,
-                  ),
-                ),
+                const SizedBox(height: 24),
+                const Divider(),
+
+
+               
               ],
             ),
           ),
@@ -306,5 +368,29 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     });
     _saveDigimon();
+  }
+
+  void _evolve() {
+    setState(() {
+      _digimon.evolve();
+    });
+    _saveDigimon();
+    _showSnackBar('進化した！ ${_digimon.evolutionStage.displayName}になった！');
+  }
+
+  Future<void> _startBattle() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BattleScreen(playerDigimon: _digimon),
+      ),
+    );
+
+    if (result == true) {
+      setState(() {
+        // ここで再描画をトリガー
+      });
+      await _saveDigimon();
+    }
   }
 }

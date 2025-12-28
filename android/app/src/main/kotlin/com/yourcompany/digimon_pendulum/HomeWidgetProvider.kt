@@ -23,6 +23,7 @@ class HomeWidgetProvider : HomeWidgetProvider() {
                 val coins = widgetData.getInt("coins", 0)
                 val mood = widgetData.getInt("mood", 100)
                 val poopCount = widgetData.getInt("poopCount", 0)
+                val battleWins = widgetData.getInt("battleWins", 0)  // 追加
                 val adventureCoins = widgetData.getInt("adventureCoins", 0)
                 val distance = widgetData.getInt("distance", 0)
                 
@@ -32,7 +33,8 @@ class HomeWidgetProvider : HomeWidgetProvider() {
                 setTextViewText(R.id.widget_coins, "コイン: $coins")
                 setTextViewText(R.id.widget_mood, "機嫌: $mood")
                 setTextViewText(R.id.widget_poop, "うんち: ${"💩".repeat(poopCount)}")
-                // setTextViewText(R.id.widget_adventure_coins, "🪙 ${adventureCoins}枚 (${distance}m)")
+                setTextViewText(R.id.widget_battle_wins, "⚔️ 勝利: $battleWins")  // 追加
+                setTextViewText(R.id.widget_adventure_coins, "🪙 ${adventureCoins}枚 (${distance}m)")
                 
                 // ボタンのクリックイベント
                 val addCoinIntent = Intent(Intent.ACTION_VIEW, Uri.parse("digimon://addcoin"))

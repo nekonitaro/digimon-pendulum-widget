@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import '../models/evolution_stage.dart';
 
 class DigimonSprite extends StatefulWidget {
   final String name;
   final int level;
+  final EvolutionStage evolutionStage;  // 追加
 
   const DigimonSprite({
     super.key,
     required this.name,
     required this.level,
+    required this.evolutionStage,  // 追加
   });
 
   @override
@@ -55,7 +58,7 @@ class _DigimonSpriteState extends State<DigimonSprite>
         width: 120,
         height: 120,
         decoration: BoxDecoration(
-          color: _getColorForLevel(),
+          color: _getColorForStage(),  // 変更
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.black, width: 2),
         ),
@@ -73,6 +76,13 @@ class _DigimonSpriteState extends State<DigimonSprite>
               ),
               const SizedBox(height: 8),
               Text(
+                widget.evolutionStage.displayName,  // 追加
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.white70,
+                ),
+              ),
+              Text(
                 'Lv.${widget.level}',
                 style: const TextStyle(
                   fontSize: 14,
@@ -86,14 +96,21 @@ class _DigimonSpriteState extends State<DigimonSprite>
     );
   }
 
-  // レベルに応じて色を変える
-  Color _getColorForLevel() {
-    if (widget.level >= 5) {
-      return Colors.red;
-    } else if (widget.level >= 3) {
-      return Colors.orange;
-    } else {
-      return Colors.blue;
+ // 進化段階に応じて色を変える
+  Color _getColorForStage() {
+    switch (widget.evolutionStage) {
+      case EvolutionStage.baby1:
+        return Colors.lightBlue;
+      case EvolutionStage.baby2:
+        return Colors.blue;
+      case EvolutionStage.child:
+        return Colors.green;
+      case EvolutionStage.adult:
+        return Colors.orange;
+      case EvolutionStage.perfect:
+        return Colors.red;
+      case EvolutionStage.ultimate:
+        return Colors.purple;
     }
   }
 }

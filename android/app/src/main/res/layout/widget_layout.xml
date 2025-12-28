@@ -50,7 +50,7 @@
         android:layout_marginTop="4dp"
         android:textColor="#555555" />
 
-    <!-- うんち -->
+   <!-- うんち -->
     <TextView
         android:id="@+id/widget_poop"
         android:layout_width="match_parent"
@@ -60,6 +60,17 @@
         android:gravity="center"
         android:layout_marginTop="4dp"
         android:textColor="#555555" />
+
+    <!-- バトル戦績（追加） -->
+    <TextView
+        android:id="@+id/widget_battle_wins"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="⚔️ 勝利: 0"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:layout_marginTop="4dp"
+        android:textColor="#FF0000" />
 
     
     <!-- 冒険コイン -->
