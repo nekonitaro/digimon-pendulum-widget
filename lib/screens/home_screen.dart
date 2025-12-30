@@ -1,4 +1,4 @@
-import 'package:digimon_pendulum/services/digimon_manager.dart';
+import '../services/digimon_manager.dart';
 import 'package:flutter/material.dart';
 import '../models/digimon.dart';
 import '../services/storage_service.dart';
@@ -138,7 +138,17 @@ Future<void> _loadDigimon() async {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return Scaffold(
-      appBar: AppBar(title: const Text('デジモン育成'), backgroundColor: Colors.blue),
+      appBar: AppBar(title: Text('デジモン育成 (${_digimonManager.currentIndex + 1}/${_digimonManager.digimons.length})'),
+        backgroundColor: Colors.blue,
+        actions: [
+          // デジモンリストボタン（追加）
+          IconButton(
+            icon: const Icon(Icons.list),
+            onPressed: _showDigimonList,
+          ),
+        ],
+      ),
+
       body: SingleChildScrollView(
         child: Center(
           child: Padding(
@@ -395,4 +405,126 @@ Future<void> _loadDigimon() async {
       await _saveDigimon();
     }
   }
+
+void _showDigimonList() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'デジモン一覧',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _digimonManager.digimons.length,
+                  itemBuilder: (context, index) {
+                    final digimon = _digimonManager.digimons[index];
+                    final isSelected = index == _digimonManager.currentIndex;
+                    
+                    return ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.blue : Colors.grey,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${index + 1}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      title: Text(digimon.name),
+                      subtitle: Text('Lv.${digimon.level} ${digimon.evolutionStage.displayName}'),
+                      trailing: isSelected 
+                          ? const Icon(Icons.check, color: Colors.blue)
+                          : null,
+                      onTap: () {
+                        setState(() {
+                          _digimonManager.switchDigimon(index);
+                        });
+                        _saveDigimon();
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 新しいデジモン追加ボタン
+              if (_digimonManager.digimons.length < _digimonManager.maxSlots)
+                ElevatedButton.icon(
+                  onPressed: _addNewDigimon,
+                  icon: const Icon(Icons.add),
+                  label: Text('新しいデジモン (${_digimonManager.digimons.length}/${_digimonManager.maxSlots})'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _addNewDigimon() {
+    Navigator.pop(context);
+    
+    // 名前入力ダイアログ
+    showDialog(
+      context: context,
+      builder: (context) {
+        String newName = 'デジモン${_digimonManager.digimons.length + 1}';
+        
+        return AlertDialog(
+          title: const Text('新しいデジモン'),
+          content: TextField(
+            decoration: const InputDecoration(labelText: '名前'),
+            onChanged: (value) {
+              newName = value;
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('キャンセル'),
+            ),
+            TextButton(
+              onPressed: () {
+                final newDigimon = Digimon(
+                  id: DateTime.now().millisecondsSinceEpoch.toString(),
+                  name: newName.isEmpty ? 'デジモン${_digimonManager.digimons.length + 1}' : newName,
+                );
+                
+                if (_digimonManager.addDigimon(newDigimon)) {
+                  setState(() {
+                    _digimonManager.switchDigimon(_digimonManager.digimons.length - 1);
+                  });
+                  _saveDigimon();
+                  Navigator.pop(context);
+                  _showSnackBar('${newDigimon.name}が仲間になった！');
+                }
+              },
+              child: const Text('作成'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
 }
