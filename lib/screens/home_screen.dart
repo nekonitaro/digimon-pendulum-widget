@@ -84,24 +84,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 既存のメソッドはそのまま
 
-  // デジモンを読み込み
-Future<void> _loadDigimon() async {
-    await _digimonManager.initialize();  // 変更
-    
-    setState(() {
-      _digimonManager.currentDigimon.updateByTimePassed();
-      _isLoading = false;
-    });
-    
-    await _saveDigimon();
-  }
 
-  // デジモンを保存
-  Future<void> _saveDigimon() async {
-    await _storageService.saveDigimon(_digimonManager.currentDigimon);
-    debugPrint('ウィジェット更新: レベル${_digimonManager.currentDigimon.level}, コイン${_digimonManager.currentDigimon.coins}');
-    await WidgetService.updateWidget(_digimonManager.currentDigimon);
-  }
+
+// ✅ 修正版：全デジモンリストを保存する
+Future<void> _saveDigimon() async {
+  // DigimonManagerの保存メソッドを使用
+  await _digimonManager.save();
+  
+  debugPrint('全デジモン保存完了: ${_digimonManager.digimons.length}体');
+  debugPrint('現在のデジモン: ${_digimonManager.currentDigimon.name} Lv.${_digimonManager.currentDigimon.level}');
+  
+  // ウィジェット更新
+  await WidgetService.updateWidget(_digimonManager.currentDigimon);
+}
+
+// ✅ 修正版：全デジモンリストを読み込む
+Future<void> _loadDigimon() async {
+  await _digimonManager.initialize();
+  
+  setState(() {
+    _digimonManager.currentDigimon.updateByTimePassed();
+    _isLoading = false;
+  });
+  
+  // 初回読み込み後も保存（時間経過処理を反映）
+  await _saveDigimon();
+}
 
   void _addCoin() {
     setState(() {
