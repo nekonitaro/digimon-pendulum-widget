@@ -111,6 +111,8 @@ class _DigimonSpriteState extends State<DigimonSprite>
         return Colors.red;
       case EvolutionStage.ultimate:
         return Colors.purple;
+      case EvolutionStage.superUltimate: // 追加
+        return const Color(0xFFFFD700);
     }
   }
 }

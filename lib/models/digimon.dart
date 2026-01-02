@@ -1,5 +1,6 @@
 import 'adventure.dart';
 import 'evolution_stage.dart';
+import 'jogress_combination.dart';
 
 class Digimon {
   final String id;
@@ -202,4 +203,59 @@ Map<String, dynamic> toJson() {
       battleLosses: json['battleLosses'] as int? ?? 0,  // 追加
     );
   }
+
+/// ジョグレス進化が可能か確認
+bool canJogressWith(Digimon other, {int availableCoins = 0}) {
+  // 1. 両方とも究極体である必要がある
+  if (evolutionStage != EvolutionStage.ultimate) return false;
+  if (other.evolutionStage != EvolutionStage.ultimate) return false;
+  
+  // 2. 同じデジモンではない
+  if (id == other.id) return false;
+  
+  // 3. 組み合わせが存在するか確認
+  final combination = JogressCombinations.findCombination(name, other.name);
+  if (combination == null) return false;
+  
+  // 4. コインが足りるか確認
+  if (availableCoins < combination.requiredCoins) return false;
+  
+  return true;
+}
+
+/// ジョグレス進化を実行（新しいデジモンを返す）
+Digimon jogressWith(Digimon other) {
+  // 組み合わせを取得
+  final combination = JogressCombinations.findCombination(name, other.name);
+  if (combination == null) {
+    throw Exception('ジョグレス組み合わせが見つかりません');
+  }
+  
+  // 新しいデジモンを生成
+  final newDigimon = Digimon(
+    id: DateTime.now().millisecondsSinceEpoch.toString(),
+    name: combination.name,
+    level: level > other.level ? level : other.level, // 高い方のレベルを引き継ぐ
+    coins: 0, // コインはリセット
+    mood: 100, // 機嫌は最高
+    evolutionStage: EvolutionStage.superUltimate,
+  );
+  
+  // バトル戦績を引き継ぐ（合算）
+  newDigimon.battleWins = battleWins + other.battleWins;
+  newDigimon.battleLosses = battleLosses + other.battleLosses;
+  
+  // 冒険データも引き継ぐ（合算）
+  newDigimon.adventure.distance = adventure.distance + other.adventure.distance;
+  newDigimon.adventure.enemiesDefeated = 
+      adventure.enemiesDefeated + other.adventure.enemiesDefeated;
+  
+  return newDigimon;
+}
+
+/// ジョグレス可能な組み合わせを取得
+JogressCombination? getJogressCombination(Digimon other) {
+  return JogressCombinations.findCombination(name, other.name);
+}
+
 }
