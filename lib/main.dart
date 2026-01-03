@@ -11,11 +11,11 @@ void main() async {
   
   // 初期URLをチェック
   final initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
-  debugPrint('main.dart: 初期URI = $initialUri');
+  // debugPrint('main.dart: 初期URI = $initialUri');
   
   // ウィジェットクリックのストリームを監視
   HomeWidget.widgetClicked.listen((uri) {
-    debugPrint('main.dart: ウィジェットクリック検出 - $uri');
+    // debugPrint('main.dart: ウィジェットクリック検出 - $uri');
   });
   
   runApp(MyApp(initialUri: initialUri));

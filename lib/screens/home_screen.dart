@@ -10,6 +10,13 @@ import 'battle_screen.dart';
 import 'jogress_screen.dart';
 import '../models/evolution_stage.dart'; // 追加
 
+// ========================================
+// 1. インポート文に追加
+// ========================================
+import '../services/debug_helper.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+
 class HomeScreen extends StatefulWidget {
   final Uri? initialUri;
 
@@ -21,7 +28,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final DigimonManager _digimonManager = DigimonManager(); // 変更
-//  final StorageService _storageService = StorageService();
+  //  final StorageService _storageService = StorageService();
   bool _isLoading = true;
   StreamSubscription<Uri?>? _widgetClickSubscription;
 
@@ -33,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // ディープリンク監視
     DeepLinkService.linkStream.listen((link) {
-      debugPrint('ディープリンク受信: $link');
+      // debugPrint('ディープリンク受信: $link');
       final uri = Uri.parse(link);
       _handleWidgetClick(uri);
     });
@@ -43,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Future<void> _checkPendingAction() async {
   //   final uri = await HomeWidget.initiallyLaunchedFromHomeWidget();
   //   if (uri != null) {
-  //     debugPrint('保留アクション検出: $uri');
+  //     // debugPrint('保留アクション検出: $uri');
   //     _handleWidgetClick(uri);
   //   }
   // }
@@ -58,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleWidgetClick(Uri? uri) {
     if (uri == null) return;
 
-    debugPrint('ウィジェットクリック: ${uri.host}'); // デバッグ用
+    // debugPrint('ウィジェットクリック: ${uri.host}'); // デバッグ用
 
     setState(() {
       if (uri.host == 'addcoin') {
@@ -89,10 +96,10 @@ class _HomeScreenState extends State<HomeScreen> {
     // DigimonManagerの保存メソッドを使用
     await _digimonManager.save();
 
-    debugPrint('全デジモン保存完了: ${_digimonManager.digimons.length}体');
-    debugPrint(
-      '現在のデジモン: ${_digimonManager.currentDigimon.name} Lv.${_digimonManager.currentDigimon.level}',
-    );
+    // debugPrint('全デジモン保存完了: ${_digimonManager.digimons.length}体');
+    // debugPrint(
+    //   '現在のデジモン: ${_digimonManager.currentDigimon.name} Lv.${_digimonManager.currentDigimon.level}',
+    // );
 
     // ウィジェット更新
     await WidgetService.updateWidget(_digimonManager.currentDigimon);
@@ -154,6 +161,12 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           // デジモンリストボタン（追加）
           IconButton(icon: const Icon(Icons.list), onPressed: _showDigimonList),
+
+          // 🔧 デバッグメニューボタン（NEW!）
+          IconButton(
+            icon: const Icon(Icons.build, color: Colors.orange),
+            onPressed: _showDebugMenu,
+          ),
         ],
       ),
 
@@ -393,6 +406,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
+                
+
                 const SizedBox(height: 24),
                 const Divider(),
               ],
@@ -600,43 +615,263 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ========================================
+  // HomeScreenクラスの末尾に追加するメソッド:
+  // ========================================
 
-// ========================================
-// HomeScreenクラスの末尾に追加するメソッド:
-// ========================================
+  Future<void> _openJogressScreen() async {
+    // 全デジモンの合計コインを計算
+    int totalCoins = 0;
+    for (var digimon in _digimonManager.digimons) {
+      totalCoins += digimon.coins;
+    }
 
-Future<void> _openJogressScreen() async {
-  // 全デジモンの合計コインを計算
-  int totalCoins = 0;
-  for (var digimon in _digimonManager.digimons) {
-    totalCoins += digimon.coins;
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JogressScreen(
+          digimonManager: _digimonManager,
+          totalCoins: totalCoins,
+        ),
+      ),
+    );
+
+    // ジョグレスが成功した場合
+    if (result != null && result['success'] == true) {
+      final coinsSpent = result['coinsSpent'] as int;
+      final resultName = result['resultName'] as String;
+
+      setState(() {
+        // 現在のデジモンからコインを消費
+        _digimonManager.currentDigimon.addCoins(-coinsSpent);
+      });
+
+      await _saveDigimon();
+
+      // 成功演出（任意）
+      _showSnackBar('🎉 $resultNameに進化した！');
+    }
   }
 
-  final result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => JogressScreen(
-        digimonManager: _digimonManager,
-        totalCoins: totalCoins,
-      ),
+  // ========================================
+// 3. HomeScreenクラスの末尾に追加するメソッド
+// ========================================
+
+/// 🔧 デバッグメニューを表示
+void _showDebugMenu() {
+  showModalBottomSheet(
+    context: context,
+    builder: (context) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.build, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Text(
+                    'デバッグメニュー',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '⚠️ 開発用機能です',
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
+              const Divider(height: 24),
+
+              // 現在のデジモンを強化
+              const Text('現在のデジモンを強化', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              
+              ElevatedButton.icon(
+                onPressed: () => _debugSetLevel(30),
+                icon: const Icon(Icons.trending_up),
+                label: const Text('レベル30にする'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              ),
+              const SizedBox(height: 8),
+              
+              ElevatedButton.icon(
+                onPressed: () => _debugSetEvolution(EvolutionStage.ultimate),
+                icon: const Icon(Icons.auto_awesome),
+                label: const Text('究極体に進化'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
+              ),
+              const SizedBox(height: 8),
+              
+              ElevatedButton.icon(
+                onPressed: _debugMaxStats,
+                icon: const Icon(Icons.star),
+                label: const Text('全ステータスMAX'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
+              ),
+              const SizedBox(height: 8),
+              
+              ElevatedButton.icon(
+                onPressed: () => _debugAddCoins(1000),
+                icon: const Icon(Icons.monetization_on),
+                label: const Text('コイン+1000'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              ),
+
+              const Divider(height: 24),
+
+              // ジョグレステスト用
+              const Text('ジョグレステスト用', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              
+              ElevatedButton.icon(
+                onPressed: _debugCreateJogressPair,
+                icon: const Icon(Icons.merge_type),
+                label: const Text('究極体ペアを作成'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
+              ),
+              const SizedBox(height: 8),
+              
+              Text(
+                '現在のスロット: ${_digimonManager.digimons.length}/${_digimonManager.maxSlots}',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+
+              const Divider(height: 24),
+
+              // データ管理
+              const Text('データ管理', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              
+              ElevatedButton.icon(
+                onPressed: _debugClearAllData,
+                icon: const Icon(Icons.delete_forever),
+                label: const Text('全データ削除'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              ),
+
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('閉じる'),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+/// レベルを設定
+void _debugSetLevel(int targetLevel) {
+  setState(() {
+    DebugHelper.setLevel(_digimonManager.currentDigimon, targetLevel);
+  });
+  _saveDigimon();
+  Navigator.pop(context);
+  _showSnackBar('レベルを${targetLevel}に設定しました');
+}
+
+/// 進化段階を設定
+void _debugSetEvolution(EvolutionStage targetStage) {
+  setState(() {
+    DebugHelper.setEvolutionStage(_digimonManager.currentDigimon, targetStage);
+  });
+  _saveDigimon();
+  Navigator.pop(context);
+  _showSnackBar('${targetStage.displayName}に進化しました');
+}
+
+/// 全ステータスをMAXにする
+void _debugMaxStats() {
+  setState(() {
+    DebugHelper.maxStats(_digimonManager.currentDigimon);
+  });
+  _saveDigimon();
+  Navigator.pop(context);
+  _showSnackBar('全ステータスをMAXにしました');
+}
+
+/// コインを追加
+void _debugAddCoins(int amount) {
+  setState(() {
+    _digimonManager.currentDigimon.addCoins(amount);
+  });
+  _saveDigimon();
+  Navigator.pop(context);
+  _showSnackBar('コインを${amount}枚追加しました');
+}
+
+/// ジョグレステスト用のペアを作成
+void _debugCreateJogressPair() {
+  if (_digimonManager.digimons.length + 2 > _digimonManager.maxSlots) {
+    // スロット不足の場合は拡張
+    _digimonManager.expandSlots(2);
+  }
+
+  final pair = DebugHelper.createJogressTestPair();
+  
+  // 🔍 IDを確認
+  // debugPrint('=== 究極体ペア作成 ===');
+  // debugPrint('  1. ${pair[0].name} (ID: ${pair[0].id})');
+  // debugPrint('  2. ${pair[1].name} (ID: ${pair[1].id})');
+  // debugPrint('===================');
+  
+  setState(() {
+    for (var digimon in pair) {
+      _digimonManager.addDigimon(digimon);
+    }
+  });
+  
+  _saveDigimon();
+  Navigator.pop(context);
+  _showSnackBar('究極体ペア（ウォーグレイモン、メタルガルルモン）を作成しました');
+}
+
+/// 全データ削除
+void _debugClearAllData() {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('⚠️ 警告'),
+      content: const Text('全てのデジモンデータを削除しますか？\nこの操作は取り消せません。'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('キャンセル'),
+        ),
+        TextButton(
+          onPressed: () async {
+            // データをクリア
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.clear();
+            
+            // アプリを再起動（画面リロード）
+            Navigator.pop(context); // ダイアログを閉じる
+            Navigator.pop(context); // デバッグメニューを閉じる
+            
+            // 再読み込み
+            setState(() {
+              _isLoading = true;
+            });
+            await _loadDigimon();
+            
+            _showSnackBar('全データを削除しました');
+          },
+          child: const Text('削除', style: TextStyle(color: Colors.red)),
+        ),
+      ],
     ),
   );
-
-  // ジョグレスが成功した場合
-  if (result != null && result['success'] == true) {
-    final coinsSpent = result['coinsSpent'] as int;
-    final resultName = result['resultName'] as String;
-
-    setState(() {
-      // 現在のデジモンからコインを消費
-      _digimonManager.currentDigimon.addCoins(-coinsSpent);
-    });
-
-    await _saveDigimon();
-
-    // 成功演出（任意）
-    _showSnackBar('🎉 $resultNameに進化した！');
-  }
 }
+
 
 }

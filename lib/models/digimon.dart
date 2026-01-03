@@ -1,3 +1,5 @@
+// import 'package:flutter/foundation.dart';
+
 import 'adventure.dart';
 import 'evolution_stage.dart';
 import 'jogress_combination.dart';
@@ -7,15 +9,15 @@ class Digimon {
   final String name;
   int level;
   int coins;
-  int mood;           // 機嫌 (0-100)
-  int poopCount;      // 糞の数
+  int mood; // 機嫌 (0-100)
+  int poopCount; // 糞の数
   DateTime lastUpdated; // 最終更新日時
-  Adventure adventure;  // 追加
-  EvolutionStage evolutionStage;  // 追加
-int battleWins;    // 勝利数
-  int battleLosses;  // 敗北数
+  Adventure adventure; // 追加
+  EvolutionStage evolutionStage; // 追加
+  int battleWins; // 勝利数
+  int battleLosses; // 敗北数
 
-Digimon({
+  Digimon({
     required this.id,
     required this.name,
     this.level = 1,
@@ -25,30 +27,30 @@ Digimon({
     DateTime? lastUpdated,
     Adventure? adventure,
     this.evolutionStage = EvolutionStage.baby1,
-    this.battleWins = 0,     // 追加
-    this.battleLosses = 0,   // 追加
+    this.battleWins = 0, // 追加
+    this.battleLosses = 0, // 追加
   }) : lastUpdated = lastUpdated ?? DateTime.now(),
        adventure = adventure ?? Adventure();
 
-/// 進化可能かチェック
+  /// 進化可能かチェック
   bool canEvolve() {
     final nextStage = evolutionStage.next;
     if (nextStage == null) return false; // 最終形態
-    
+
     // レベル条件
     if (level < nextStage.requiredLevel) return false;
-    
+
     // 機嫌条件
     if (mood < 50) return false;
-    
+
     // バトル勝利数条件（追加）
     final requiredWins = nextStage.index * 2; // 段階ごとに2勝必要
     if (battleWins < requiredWins) return false;
-    
+
     return true;
   }
 
-/// バトル勝利を記録
+  /// バトル勝利を記録
   void recordWin(int coinsEarned) {
     battleWins++;
     addCoins(coinsEarned);
@@ -71,7 +73,6 @@ Digimon({
     if (totalBattles == 0) return 0.0;
     return (battleWins / totalBattles * 100);
   }
-
 
   /// 進化実行
   void evolve() {
@@ -142,13 +143,12 @@ Digimon({
   }
 
   /// 時間経過による状態更新
-void updateByTimePassed() {
+  void updateByTimePassed() {
     final now = DateTime.now();
     final hoursPassed = now.difference(lastUpdated).inHours;
 
     // 冒険を更新（追加）
     adventure.updateAdventure();
-
 
     // 2時間ごとに糞が1個増える
     final newPoops = hoursPassed ~/ 2;
@@ -166,7 +166,8 @@ void updateByTimePassed() {
 
     _updateTimestamp();
   }
-Map<String, dynamic> toJson() {
+
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
       'name': name,
@@ -177,7 +178,7 @@ Map<String, dynamic> toJson() {
       'lastUpdated': lastUpdated.toIso8601String(),
       'adventure': adventure.toJson(),
       'evolutionStage': evolutionStage.index,
-      'battleWins': battleWins,     // 追加
+      'battleWins': battleWins, // 追加
       'battleLosses': battleLosses, // 追加
     };
   }
@@ -199,63 +200,87 @@ Map<String, dynamic> toJson() {
       evolutionStage: json['evolutionStage'] != null
           ? EvolutionStage.values[json['evolutionStage'] as int]
           : EvolutionStage.baby1,
-      battleWins: json['battleWins'] as int? ?? 0,      // 追加
-      battleLosses: json['battleLosses'] as int? ?? 0,  // 追加
+      battleWins: json['battleWins'] as int? ?? 0, // 追加
+      battleLosses: json['battleLosses'] as int? ?? 0, // 追加
     );
   }
 
-/// ジョグレス進化が可能か確認
-bool canJogressWith(Digimon other, {int availableCoins = 0}) {
-  // 1. 両方とも究極体である必要がある
-  if (evolutionStage != EvolutionStage.ultimate) return false;
-  if (other.evolutionStage != EvolutionStage.ultimate) return false;
-  
-  // 2. 同じデジモンではない
-  if (id == other.id) return false;
-  
-  // 3. 組み合わせが存在するか確認
-  final combination = JogressCombinations.findCombination(name, other.name);
-  if (combination == null) return false;
-  
-  // 4. コインが足りるか確認
-  if (availableCoins < combination.requiredCoins) return false;
-  
-  return true;
-}
+  /// ジョグレス進化が可能か確認
+  bool canJogressWith(Digimon other, {int availableCoins = 0}) {
+    // debugPrint('  🔍 canJogressWith チェック開始');
+    // debugPrint('    自分: $name (ID: $id)');
+    // debugPrint('    相手: ${other.name} (ID: ${other.id})');
 
-/// ジョグレス進化を実行（新しいデジモンを返す）
-Digimon jogressWith(Digimon other) {
-  // 組み合わせを取得
-  final combination = JogressCombinations.findCombination(name, other.name);
-  if (combination == null) {
-    throw Exception('ジョグレス組み合わせが見つかりません');
+    // 1. 両方とも究極体である必要がある
+    if (evolutionStage != EvolutionStage.ultimate) {
+      // debugPrint('    ❌ 自分が究極体ではない: $evolutionStage');
+      return false;
+    }
+    if (other.evolutionStage != EvolutionStage.ultimate) {
+      // debugPrint('    ❌ 相手が究極体ではない: ${other.evolutionStage}');
+      return false;
+    }
+
+    // 2. 同じデジモンではない
+    if (id == other.id) {
+      // debugPrint('    ❌ 同じID: $id');
+      return false;
+    }
+
+    // 3. 組み合わせが存在するか確認
+    final combination = JogressCombinations.findCombination(name, other.name);
+    if (combination == null) {
+      // debugPrint('    ❌ 組み合わせが見つからない');
+      return false;
+    }
+
+    // // debugPrint(
+    //   '    組み合わせ: ${combination.name} (必要: ${combination.requiredCoins})',
+    // );
+
+    // 4. コインが足りるか確認（availableCoinsを使用）
+    if (availableCoins < combination.requiredCoins) {
+      // debugPrint('    ❌ コイン不足: $availableCoins < ${combination.requiredCoins}');
+      return false;
+    }
+
+    // debugPrint('    ✅ ジョグレス可能');
+    return true;
   }
-  
-  // 新しいデジモンを生成
-  final newDigimon = Digimon(
-    id: DateTime.now().millisecondsSinceEpoch.toString(),
-    name: combination.name,
-    level: level > other.level ? level : other.level, // 高い方のレベルを引き継ぐ
-    coins: 0, // コインはリセット
-    mood: 100, // 機嫌は最高
-    evolutionStage: EvolutionStage.superUltimate,
-  );
-  
-  // バトル戦績を引き継ぐ（合算）
-  newDigimon.battleWins = battleWins + other.battleWins;
-  newDigimon.battleLosses = battleLosses + other.battleLosses;
-  
-  // 冒険データも引き継ぐ（合算）
-  newDigimon.adventure.distance = adventure.distance + other.adventure.distance;
-  newDigimon.adventure.enemiesDefeated = 
-      adventure.enemiesDefeated + other.adventure.enemiesDefeated;
-  
-  return newDigimon;
-}
 
-/// ジョグレス可能な組み合わせを取得
-JogressCombination? getJogressCombination(Digimon other) {
-  return JogressCombinations.findCombination(name, other.name);
-}
+  /// ジョグレス進化を実行（新しいデジモンを返す）
+  Digimon jogressWith(Digimon other) {
+    // 組み合わせを取得
+    final combination = JogressCombinations.findCombination(name, other.name);
+    if (combination == null) {
+      throw Exception('ジョグレス組み合わせが見つかりません');
+    }
 
+    // 新しいデジモンを生成
+    final newDigimon = Digimon(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: combination.name,
+      level: level > other.level ? level : other.level, // 高い方のレベルを引き継ぐ
+      coins: 0, // コインはリセット
+      mood: 100, // 機嫌は最高
+      evolutionStage: EvolutionStage.superUltimate,
+    );
+
+    // バトル戦績を引き継ぐ（合算）
+    newDigimon.battleWins = battleWins + other.battleWins;
+    newDigimon.battleLosses = battleLosses + other.battleLosses;
+
+    // 冒険データも引き継ぐ（合算）
+    newDigimon.adventure.distance =
+        adventure.distance + other.adventure.distance;
+    newDigimon.adventure.enemiesDefeated =
+        adventure.enemiesDefeated + other.adventure.enemiesDefeated;
+
+    return newDigimon;
+  }
+
+  /// ジョグレス可能な組み合わせを取得
+  JogressCombination? getJogressCombination(Digimon other) {
+    return JogressCombinations.findCombination(name, other.name);
+  }
 }

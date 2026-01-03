@@ -315,11 +315,22 @@ class _JogressScreenState extends State<JogressScreen> {
     final index2 = pair['index2'] as int;
     final combination = pair['combination'] as JogressCombination;
 
+    // 🔍 デバッグログ追加
+    // debugPrint('=== ジョグレス実行 ===');
+    // debugPrint('  index1: $index1');
+    // debugPrint('  index2: $index2');
+    // debugPrint('  所持コイン: ${widget.totalCoins}');
+    // debugPrint('  必要コイン: ${combination.requiredCoins}');
+    // debugPrint('  デジモン数: ${widget.digimonManager.digimons.length}');
+
     final success = widget.digimonManager.executeJogress(
       index1,
       index2,
       widget.totalCoins,
     );
+
+    // debugPrint('  結果: ${success ? "成功" : "失敗"}');
+    // debugPrint('==================');
 
     if (success) {
       // 成功時は画面を閉じて結果を返す

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+// import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/digimon.dart';
 
@@ -57,7 +57,7 @@ class StorageService {
     await prefs.setString(_allDigimonsKey, jsonString);
     
     // デバッグ用ログ
-    debugPrint('💾 保存完了: ${digimonsList.length}体のデジモン');
+    // debugPrint('💾 保存完了: ${digimonsList.length}体のデジモン');
   }
 
   /// ✅ 全デジモンを読み込み（メインで使用）
@@ -66,7 +66,7 @@ class StorageService {
     final jsonString = prefs.getString(_allDigimonsKey);
     
     if (jsonString == null) {
-      debugPrint('📂 保存データなし（初回起動）');
+      // debugPrint('📂 保存データなし（初回起動）');
       return null;
     }
     
@@ -78,7 +78,7 @@ class StorageService {
           .map((d) => Digimon.fromJson(d as Map<String, dynamic>))
           .toList();
       
-      debugPrint('📂 読み込み完了: ${digimonsList.length}体のデジモン');
+      // debugPrint('📂 読み込み完了: ${digimonsList.length}体のデジモン');
       
       return {
         'digimons': digimonsList,
@@ -86,7 +86,7 @@ class StorageService {
         'maxSlots': json['maxSlots'] as int? ?? 2,
       };
     } catch (e) {
-      debugPrint('❌ 読み込みエラー: $e');
+      // debugPrint('❌ 読み込みエラー: $e');
       return null;
     }
   }
@@ -96,6 +96,6 @@ class StorageService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_allDigimonsKey);
     await prefs.remove(_digimonKey);
-    debugPrint('🗑️ 全データクリア完了');
+    // debugPrint('🗑️ 全データクリア完了');
   }
 }

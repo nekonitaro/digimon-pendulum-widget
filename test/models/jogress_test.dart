@@ -7,14 +7,14 @@ import 'package:digimon_pendulum/services/digimon_manager.dart';
 void main() {
   group('JogressCombination Tests', () {
     test('汎用ジョグレス組み合わせは任意の究極体2体で成立する', () {
-      final combo = JogressCombinations.generic;
+      const combo = JogressCombinations.generic;
       
       expect(combo.canJogress('デジモンA', 'デジモンB'), true);
       expect(combo.canJogress('ウォーグレイモン', 'メタルガルルモン'), true);
     });
 
     test('特定組み合わせは指定されたデジモン名でのみ成立する', () {
-      final combo = JogressCombinations.warGreymonMetalGarurumon;
+      const combo = JogressCombinations.warGreymonMetalGarurumon;
       
       expect(combo.canJogress('ウォーグレイモン', 'メタルガルルモン'), true);
       expect(combo.canJogress('メタルガルルモン', 'ウォーグレイモン'), true);
@@ -171,6 +171,110 @@ void main() {
       expect(pairs.length, 1);
       expect(pairs[0]['digimon1'].name, 'ウォーグレイモン');
       expect(pairs[0]['digimon2'].name, 'メタルガルルモン');
+    });
+
+    test('🔍 レベル1デジモンと究極体2体が混在する場合（実際のバグ再現）', () {
+      // 1体目: レベル1のアグモン
+      final baby = Digimon(
+        id: '1',
+        name: 'アグモン',
+        level: 1,
+        evolutionStage: EvolutionStage.baby1,
+      );
+      
+      // 2体目: 究極体
+      final ultimate1 = Digimon(
+        id: '2',
+        name: 'ウォーグレイモン',
+        level: 30,
+        evolutionStage: EvolutionStage.ultimate,
+      );
+      
+      // 3体目: 究極体
+      final ultimate2 = Digimon(
+        id: '3',
+        name: 'メタルガルルモン',
+        level: 28,
+        evolutionStage: EvolutionStage.ultimate,
+      );
+
+      manager.addDigimon(baby);
+      manager.addDigimon(ultimate1);
+      manager.addDigimon(ultimate2);
+
+      // ジョグレス可能ペアを取得
+      final pairs = manager.getJogressablePairs();
+
+      // 究極体2体のペアのみ取得されるべき
+      expect(pairs.length, 1, reason: '究極体2体のペアが1つだけ取得されるべき');
+      expect(pairs[0]['digimon1'].id, '2');
+      expect(pairs[0]['digimon2'].id, '3');
+      expect(pairs[0]['index1'], 1, reason: 'index1は2体目（インデックス1）のはず');
+      expect(pairs[0]['index2'], 2, reason: 'index2は3体目（インデックス2）のはず');
+    });
+
+    test('🔍 ジョグレス実行時のインデックス検証（バグ再現）', () {
+      // 1体目: レベル1のアグモン
+      final baby = Digimon(
+        id: '1',
+        name: 'アグモン',
+        level: 1,
+        evolutionStage: EvolutionStage.baby1,
+      );
+      
+      // 2体目: 究極体
+      final ultimate1 = Digimon(
+        id: '2',
+        name: 'ウォーグレイモン',
+        level: 30,
+        evolutionStage: EvolutionStage.ultimate,
+      );
+      
+      // 3体目: 究極体
+      final ultimate2 = Digimon(
+        id: '3',
+        name: 'メタルガルルモン',
+        level: 28,
+        evolutionStage: EvolutionStage.ultimate,
+      );
+
+      manager.addDigimon(baby);
+      manager.addDigimon(ultimate1);
+      manager.addDigimon(ultimate2);
+
+      expect(manager.digimons.length, 3);
+
+      // 2体目と3体目（インデックス1と2）をジョグレス
+      final success = manager.executeJogress(1, 2, 500);
+
+      expect(success, true, reason: 'ジョグレスは成功すべき');
+      expect(manager.digimons.length, 2, reason: '3体→2体になるべき（アグモン + オメガモン）');
+      
+      // 残っているデジモンを確認
+      expect(manager.digimons[0].name, 'アグモン', reason: '1体目はそのまま残る');
+      expect(manager.digimons[1].name, 'オメガモン', reason: '2体目は新しいオメガモン');
+      expect(manager.digimons[1].evolutionStage, EvolutionStage.superUltimate);
+    });
+
+    test('🔍 ジョグレス後のcurrentIndexが正しいか検証', () {
+      final baby = Digimon(id: '1', name: 'アグモン');
+      final ultimate1 = Digimon(id: '2', name: 'ウォーグレイモン', evolutionStage: EvolutionStage.ultimate);
+      final ultimate2 = Digimon(id: '3', name: 'メタルガルルモン', evolutionStage: EvolutionStage.ultimate);
+
+      manager.addDigimon(baby);
+      manager.addDigimon(ultimate1);
+      manager.addDigimon(ultimate2);
+      
+      // 1体目（アグモン）を選択状態にする
+      manager.switchDigimon(0);
+      expect(manager.currentIndex, 0);
+
+      // 2体目と3体目をジョグレス
+      manager.executeJogress(1, 2, 500);
+
+      // ジョグレス後のインデックスをチェック
+      expect(manager.currentIndex, 1, reason: '新しいデジモン（オメガモン）が選択される');
+      expect(manager.currentDigimon.name, 'オメガモン');
     });
 
     test('究極体が3体いる場合、3ペア取得できる', () {

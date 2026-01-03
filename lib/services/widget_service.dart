@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+// import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
 import '../models/digimon.dart';
 
@@ -24,7 +24,7 @@ class WidgetService {
         androidName: 'HomeWidgetProvider',
       );
     } catch (e) {
-      debugPrint('ウィジェット更新エラー: $e');
+      // debugPrint('ウィジェット更新エラー: $e');
     }
   }
 
@@ -41,10 +41,10 @@ class WidgetService {
   static Future<void> backgroundCallback(Uri? uri) async {
     if (uri?.host == 'addcoin') {
       // コイン追加処理
-      debugPrint('コイン追加');
+      // debugPrint('コイン追加');
     } else if (uri?.host == 'cleanpoop') {
       // うんち掃除処理
-      debugPrint('うんち掃除');
+      // debugPrint('うんち掃除');
     }
   }
 }
