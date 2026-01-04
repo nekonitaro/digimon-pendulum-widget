@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import '../models/digimon.dart';
 import '../services/digimon_manager.dart';
 import '../models/jogress_combination.dart';
-import '../models/evolution_stage.dart'; // 追加
+import '../models/evolution_stage.dart';
+import '../services/shop_manager.dart';
 
 class JogressScreen extends StatefulWidget {
   final DigimonManager digimonManager;
-  final int totalCoins; // 所持コイン総数
+  final int totalCoins;
+  final ShopManager? shopManager;
 
   const JogressScreen({
     super.key,
     required this.digimonManager,
     required this.totalCoins,
+    this.shopManager,
   });
 
   @override
@@ -99,6 +102,11 @@ class _JogressScreenState extends State<JogressScreen> {
     final digimon2 = pair['digimon2'] as Digimon;
     final combination = pair['combination'] as JogressCombination;
     final canAfford = widget.totalCoins >= combination.requiredCoins;
+    
+    // ジョグレスアイテムチェック
+    final hasItem = widget.shopManager == null || 
+                    widget.shopManager!.jogressItemCount > 0;
+    final canJogress = canAfford && hasItem;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -191,16 +199,40 @@ class _JogressScreenState extends State<JogressScreen> {
                 ),
               ],
             ),
+            
+            // ジョグレスアイテムチェック
+            if (widget.shopManager != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.merge_type,
+                    color: hasItem ? Colors.purple : Colors.grey,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'ジョグレスストーン: ${widget.shopManager!.jogressItemCount}個',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: hasItem ? Colors.purple : Colors.red,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            
             const SizedBox(height: 16),
 
             // ジョグレスボタン
             ElevatedButton.icon(
-              onPressed: canAfford
-                  ? () => _confirmJogress(pair)
-                  : null,
+              onPressed: canJogress ? () => _confirmJogress(pair) : null,
               icon: const Icon(Icons.merge_type),
               label: Text(
-                canAfford ? 'ジョグレス進化' : 'コイン不足',
+                !canAfford ? 'コイン不足' : 
+                !hasItem ? 'アイテム不足' : 
+                'ジョグレス進化',
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.purple,
@@ -288,6 +320,8 @@ class _JogressScreenState extends State<JogressScreen> {
             const Text('・この操作は取り消せません'),
             const SizedBox(height: 8),
             Text('必要コイン: ${combination.requiredCoins}'),
+            if (widget.shopManager != null)
+              Text('ジョグレスストーン: 1個消費'),
           ],
         ),
         actions: [
@@ -315,22 +349,24 @@ class _JogressScreenState extends State<JogressScreen> {
     final index2 = pair['index2'] as int;
     final combination = pair['combination'] as JogressCombination;
 
-    // 🔍 デバッグログ追加
-    // debugPrint('=== ジョグレス実行 ===');
-    // debugPrint('  index1: $index1');
-    // debugPrint('  index2: $index2');
-    // debugPrint('  所持コイン: ${widget.totalCoins}');
-    // debugPrint('  必要コイン: ${combination.requiredCoins}');
-    // debugPrint('  デジモン数: ${widget.digimonManager.digimons.length}');
+    // アイテムを消費
+    if (widget.shopManager != null) {
+      if (!widget.shopManager!.useJogressItem()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ジョグレスストーンが足りません'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
 
     final success = widget.digimonManager.executeJogress(
       index1,
       index2,
       widget.totalCoins,
     );
-
-    // debugPrint('  結果: ${success ? "成功" : "失敗"}');
-    // debugPrint('==================');
 
     if (success) {
       // 成功時は画面を閉じて結果を返す
@@ -349,7 +385,13 @@ class _JogressScreenState extends State<JogressScreen> {
         ),
       );
     } else {
-      // 失敗時
+      // 失敗時はアイテムを返却
+      if (widget.shopManager != null) {
+        widget.shopManager!.jogressItemCount++;
+        widget.shopManager!.save();
+      }
+      
+      // 失敗メッセージ
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('ジョグレス進化に失敗しました'),
