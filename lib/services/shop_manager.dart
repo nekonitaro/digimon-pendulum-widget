@@ -94,8 +94,10 @@ class ShopManager {
     print('  ${current.name}のコイン: ${current.coins}');
     
     if (current.coins >= remaining) {
-      current.addCoins(-remaining);
-      print('  → ${current.name}から$remaining消費');
+      // 十分なコインがある場合
+      final newCoins = current.coins - remaining;
+      current.coins = newCoins; // 直接代入
+      print('  → ${current.name}から$remaining消費（残: ${current.coins}）');
       print('  消費後の合計: ${_getTotalCoins()}');
       print('================');
       return;
@@ -117,8 +119,9 @@ class ShopManager {
       print('  ${digimon.name}のコイン: ${digimon.coins}');
       
       if (digimon.coins >= remaining) {
-        digimon.addCoins(-remaining);
-        print('  → ${digimon.name}から$remaining消費');
+        final newCoins = digimon.coins - remaining;
+        digimon.coins = newCoins; // 直接代入
+        print('  → ${digimon.name}から$remaining消費（残: ${digimon.coins}）');
         remaining = 0;
         break;
       }
