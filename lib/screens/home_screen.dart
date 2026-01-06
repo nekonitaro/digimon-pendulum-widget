@@ -12,6 +12,8 @@ import '../services/debug_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'shop_screen.dart';
 import '../services/shop_manager.dart';
+import '../services/notification_service.dart';
+import 'settings_screen.dart'; // 追加 // 追加
 
 class HomeScreen extends StatefulWidget {
   final Uri? initialUri;
@@ -32,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _shopManager = ShopManager(digimonManager: _digimonManager);
-    _loadDigimon();
+    _initializeApp();
     WidgetService.registerCallbacks();
 
     // ディープリンク監視
@@ -41,6 +43,24 @@ class _HomeScreenState extends State<HomeScreen> {
       final uri = Uri.parse(link);
       _handleWidgetClick(uri);
     });
+  }
+
+  /// アプリ初期化
+  Future<void> _initializeApp() async {
+    // 通知サービス初期化
+    final notifications = NotificationService();
+    await notifications.initialize();
+    
+    // 通知権限をリクエスト
+    final granted = await notifications.requestPermission();
+    if (granted) {
+      debugPrint('✅ 通知権限が許可されました');
+    } else {
+      debugPrint('⚠️ 通知権限が拒否されました');
+    }
+    
+    // デジモンデータ読み込み
+    await _loadDigimon();
   }
 
   @override
@@ -145,6 +165,11 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.shopping_cart, color: Colors.orange),
             onPressed: _openShopScreen,
+          ),
+          // 設定ボタン（NEW!）
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _openSettingsScreen,
           ),
           // デバッグメニューボタン
           IconButton(
@@ -550,6 +575,16 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {});
       }
     }
+  }
+
+  /// 設定画面を開く（NEW!）
+  Future<void> _openSettingsScreen() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SettingsScreen(),
+      ),
+    );
   }
 
   void _showDebugMenu() {

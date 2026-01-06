@@ -11,9 +11,13 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+// Kotlin DSLでは「is」から始まり、「=」で代入します
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
@@ -41,4 +45,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Kotlin DSLでは、シングルクォーテーションではなくダブルクォーテーション (" ") を使い、
+    // 関数としてカッコ ( ) で囲む必要があります
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }

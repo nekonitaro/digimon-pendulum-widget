@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/digimon.dart';
 import '../models/battle.dart';
 
+
 class BattleScreen extends StatefulWidget {
   final Digimon playerDigimon;
 

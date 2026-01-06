@@ -3,6 +3,7 @@
 import 'adventure.dart';
 import 'evolution_stage.dart';
 import 'jogress_combination.dart';
+import '../services/notification_service.dart';
 
 class Digimon {
   final String id;
@@ -282,5 +283,44 @@ class Digimon {
   /// ジョグレス可能な組み合わせを取得
   JogressCombination? getJogressCombination(Digimon other) {
     return JogressCombinations.findCombination(name, other.name);
+  }
+  // Digimonクラス内に追加:
+
+  /// 状態をチェックして通知を送る
+  Future<void> checkAndNotify() async {
+    final notifications = NotificationService();
+
+    // うんち通知（3個以上）
+    if (poopCount >= 3) {
+      await notifications.notifyPoop(name, poopCount);
+    }
+
+    // 進化可能通知
+    if (canEvolve() && evolutionStage.next != null) {
+      await notifications.notifyEvolutionReady(
+        name,
+        evolutionStage.next!.displayName,
+      );
+    }
+
+    // 機嫌悪化通知（30以下）
+    if (mood <= 30) {
+      await notifications.notifyLowMood(name, mood);
+    }
+
+    // 冒険完了通知
+    if (adventure.coinsCollected > 0 || adventure.enemiesDefeated > 0) {
+      await notifications.notifyAdventureComplete(
+        name,
+        adventure.coinsCollected,
+        adventure.enemiesDefeated,
+      );
+    }
+  }
+
+  /// 時間経過更新時に通知もチェック
+  void updateByTimePassedWithNotification() {
+    updateByTimePassed();
+    checkAndNotify();
   }
 }

@@ -2,6 +2,14 @@
     
     <uses-permission android:name="android.permission.INTERNET"/>
     
+   <!-- 通知権限（追加） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+
+
     <application
         android:label="digimon_pendulum"
         android:name="${applicationName}"
@@ -39,7 +47,19 @@
         </intent-filter>
         
        </activity>
+           <!-- 通知アイコン（追加） -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
         
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="digimon_channel" />
+
+        <meta-data
+          android:name="flutterEmbedding"
+          android:value="2" />
+          
       <receiver 
             android:name="com.yourcompany.digimon_pendulum.HomeWidgetProvider"
             android:exported="true">
