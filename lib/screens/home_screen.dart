@@ -1,780 +1,695 @@
-import '../services/digimon_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:async';
 import '../models/digimon.dart';
 import '../models/evolution_stage.dart';
-import '../widgets/digimon_sprite.dart';
+import '../services/digimon_manager.dart';
 import '../services/widget_service.dart';
-import 'dart:async';
 import '../services/deep_link_service.dart';
+import '../widgets/digimon_sprite.dart';
 import 'battle_screen.dart';
-import 'jogress_screen.dart';
-import '../services/debug_helper.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'shop_screen.dart';
-import '../services/shop_manager.dart';
-import '../services/notification_service.dart';
-import 'settings_screen.dart'; // 追加 // 追加
+import 'jogress_screen.dart';
+import 'settings_screen.dart';
 
+/// ペンデュラム風のホーム画面
 class HomeScreen extends StatefulWidget {
-  final Uri? initialUri;
+  final DigimonManager digimonManager;
 
-  const HomeScreen({super.key, this.initialUri});
+  const HomeScreen({
+    super.key,
+    required this.digimonManager,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final DigimonManager _digimonManager = DigimonManager();
-  late final ShopManager _shopManager;
-  bool _isLoading = true;
-  StreamSubscription<Uri?>? _widgetClickSubscription;
-
+  Timer? _updateTimer;
+  
   @override
   void initState() {
     super.initState();
-    _shopManager = ShopManager(digimonManager: _digimonManager);
-    _initializeApp();
-    WidgetService.registerCallbacks();
-
-    // ディープリンク監視
-    DeepLinkService.linkStream.listen((link) {
-      debugPrint('ディープリンク受信: $link');
-      final uri = Uri.parse(link);
-      _handleWidgetClick(uri);
+    _initializeScreen();
+    
+    // 定期的な更新（1分ごと）
+    _updateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _updateDigimon();
     });
-  }
-
-  /// アプリ初期化
-  Future<void> _initializeApp() async {
-    // 通知サービス初期化
-    final notifications = NotificationService();
-    await notifications.initialize();
-    
-    // 通知権限をリクエスト
-    final granted = await notifications.requestPermission();
-    if (granted) {
-      debugPrint('✅ 通知権限が許可されました');
-    } else {
-      debugPrint('⚠️ 通知権限が拒否されました');
-    }
-    
-    // デジモンデータ読み込み
-    await _loadDigimon();
   }
 
   @override
   void dispose() {
-    _widgetClickSubscription?.cancel();
+    _updateTimer?.cancel();
     super.dispose();
   }
 
-  // ウィジェットクリック処理
+  Future<void> _initializeScreen() async {
+    // 初期化処理
+    _updateDigimon();
+    
+    // 通知チェック
+    await widget.digimonManager.currentDigimon.checkAndNotify();
+    
+    // ディープリンク設定
+    DeepLinkService.initialize((uri) => _handleWidgetClick(uri));
+  }
+
+  void _updateDigimon() {
+    setState(() {
+      widget.digimonManager.currentDigimon.updateByTimePassed();
+    });
+  }
+
+  Future<void> _saveDigimon() async {
+    await widget.digimonManager.save();
+    await WidgetService.updateWidget(widget.digimonManager.currentDigimon);
+  }
+
   void _handleWidgetClick(Uri? uri) {
     if (uri == null) return;
-
-    debugPrint('ウィジェットクリック: ${uri.host}');
-
-    setState(() {
-      if (uri.host == 'addcoin') {
-        _digimonManager.currentDigimon.addCoins(1);
+    
+    if (uri.host == 'addcoin') {
+      widget.digimonManager.currentDigimon.addCoins(1);
+      _saveDigimon();
+      _showSnackBar('コイン +1');
+    } else if (uri.host == 'cleanpoop') {
+      if (widget.digimonManager.currentDigimon.poopCount > 0) {
+        widget.digimonManager.currentDigimon.cleanPoop();
         _saveDigimon();
-        _showSnackBar('コインを1枚もらった！');
-      } else if (uri.host == 'cleanpoop') {
-        if (_digimonManager.currentDigimon.poopCount > 0) {
-          _digimonManager.currentDigimon.cleanPoop();
-          _saveDigimon();
-          _showSnackBar('うんちを掃除した！');
-        }
+        _showSnackBar('うんちを掃除しました');
       }
-    });
+    }
   }
 
-  // スナックバー表示
   void _showSnackBar(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 1),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
-  }
-
-  // デジモンを読み込み
-  Future<void> _loadDigimon() async {
-    await _digimonManager.initialize();
-    await _shopManager.load(); // ショップデータも読み込み
-    
-    setState(() {
-      _digimonManager.currentDigimon.updateByTimePassed();
-      _isLoading = false;
-    });
-    
-    await _saveDigimon();
-  }
-
-  // デジモンを保存
-  Future<void> _saveDigimon() async {
-    await _digimonManager.save();
-    debugPrint('全デジモン保存完了: ${_digimonManager.digimons.length}体');
-    await WidgetService.updateWidget(_digimonManager.currentDigimon);
-  }
-
-  void _addCoin() {
-    setState(() {
-      _digimonManager.currentDigimon.addCoins(1);
-    });
-    _saveDigimon();
-  }
-
-  void _levelUp() {
-    setState(() {
-      _digimonManager.currentDigimon.levelUp();
-    });
-    _saveDigimon();
-  }
-
-  void _cleanPoop() {
-    setState(() {
-      _digimonManager.currentDigimon.cleanPoop();
-    });
-    _saveDigimon();
-  }
-
-  void _interact() {
-    setState(() {
-      _digimonManager.currentDigimon.interact();
-    });
-    _saveDigimon();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-    
+    final digimon = widget.digimonManager.currentDigimon;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text('デジモン育成 (${_digimonManager.currentIndex + 1}/${_digimonManager.digimons.length})'),
-        backgroundColor: Colors.blue,
-        actions: [
-          // デジモンリストボタン
-          IconButton(
-            icon: const Icon(Icons.list),
-            onPressed: _showDigimonList,
-          ),
-          // ショップボタン
-          IconButton(
-            icon: const Icon(Icons.shopping_cart, color: Colors.orange),
-            onPressed: _openShopScreen,
-          ),
-          // 設定ボタン（NEW!）
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: _openSettingsScreen,
-          ),
-          // デバッグメニューボタン
-          IconButton(
-            icon: const Icon(Icons.build, color: Colors.orange),
-            onPressed: _showDebugMenu,
-          ),
-        ],
-      ),
-
-      body: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              children: [
-                // デジモンスプライト
-                DigimonSprite(
-                  name: _digimonManager.currentDigimon.name,
-                  level: _digimonManager.currentDigimon.level,
-                  evolutionStage: _digimonManager.currentDigimon.evolutionStage,
-                ),
-                const SizedBox(height: 40),
-
-                // レベル表示
-                _buildInfoRow('レベル', '${_digimonManager.currentDigimon.level}'),
-                const SizedBox(height: 16),
-
-                // 進化段階表示
-                _buildInfoRow('進化段階', _digimonManager.currentDigimon.evolutionStage.displayName),
-                const SizedBox(height: 16),
-
-                // コイン表示
-                _buildInfoRow('コイン', '${_digimonManager.currentDigimon.coins}'),
-                const SizedBox(height: 16),
-
-                // 機嫌表示
-                _buildInfoRow('機嫌', '${_digimonManager.currentDigimon.mood}', color: _getMoodColor()),
-                const SizedBox(height: 16),
-
-                // 糞表示
-                _buildInfoRow('うんち', '💩' * _digimonManager.currentDigimon.poopCount),
-                const SizedBox(height: 16),
-
-                // 糞掃除ボタン
-                ElevatedButton.icon(
-                  onPressed: _digimonManager.currentDigimon.poopCount > 0 ? _cleanPoop : null,
-                  icon: const Icon(Icons.cleaning_services),
-                  label: const Text('うんち掃除'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 18),
-                    backgroundColor: Colors.brown,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // 触れ合いボタン
-                ElevatedButton.icon(
-                  onPressed: _interact,
-                  icon: const Icon(Icons.favorite),
-                  label: const Text('なでなで'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 18),
-                    backgroundColor: Colors.pink,
-                  ),
-                ),
-
-                // 冒険情報
-                const SizedBox(height: 24),
-                const Divider(),
-                const Text('冒険', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                _buildInfoRow('距離', '${_digimonManager.currentDigimon.adventure.distance}m'),
-                _buildInfoRow('発見コイン', '${_digimonManager.currentDigimon.adventure.coinsCollected}枚'),
-                _buildInfoRow('倒した敵', '${_digimonManager.currentDigimon.adventure.enemiesDefeated}体'),
-                const SizedBox(height: 16),
-
-                // コイン回収ボタン
-                ElevatedButton.icon(
-                  onPressed: _digimonManager.currentDigimon.adventure.coinsCollected > 0
-                      ? _collectAdventureCoins
-                      : null,
-                  icon: const Icon(Icons.card_giftcard),
-                  label: Text('コイン回収 (${_digimonManager.currentDigimon.adventure.coinsCollected})'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-                ),
-                const SizedBox(height: 24),
-                const Divider(),
-
-                // バトル戦績
-                const Text('バトル', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                _buildInfoRow('勝利', '${_digimonManager.currentDigimon.battleWins}回'),
-                _buildInfoRow('敗北', '${_digimonManager.currentDigimon.battleLosses}回'),
-                _buildInfoRow('勝率', '${_digimonManager.currentDigimon.winRate.toStringAsFixed(1)}%'),
-                const SizedBox(height: 16),
-
-                // バトル開始ボタン
-                ElevatedButton.icon(
-                  onPressed: _startBattle,
-                  icon: const Icon(Icons.sports_martial_arts),
-                  label: const Text('バトル開始'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 18),
-                    backgroundColor: Colors.red,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Divider(),
-
-                // 次のレベルアップに必要なコイン
-                _buildInfoRow('次のレベルまで', '${_digimonManager.currentDigimon.getRequiredCoinsForLevelUp()} コイン'),
-                const SizedBox(height: 20),
-
-                // コインをもらうボタン
-                ElevatedButton.icon(
-                  onPressed: _addCoin,
-                  icon: const Icon(Icons.monetization_on),
-                  label: const Text('コインをもらう (+1)'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 18),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // レベルアップボタン
-                ElevatedButton.icon(
-                  onPressed: _digimonManager.currentDigimon.canLevelUp() ? _levelUp : null,
-                  icon: const Icon(Icons.arrow_upward),
-                  label: const Text('レベルアップ'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 18),
-                    backgroundColor: Colors.green,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // 進化ボタン
-                ElevatedButton.icon(
-                  onPressed: _digimonManager.currentDigimon.canEvolve() ? _evolve : null,
-                  icon: const Icon(Icons.auto_awesome),
-                  label: Text(_digimonManager.currentDigimon.canEvolve() ? '進化する！' : '進化条件未達成'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 18),
-                    backgroundColor: Colors.purple,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // ジョグレス進化ボタン
-                ElevatedButton.icon(
-                  onPressed: _openJogressScreen,
-                  icon: const Icon(Icons.merge_type),
-                  label: const Text('ジョグレス進化'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 18),
-                    backgroundColor: Colors.deepPurple,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // ショップボタン
-                ElevatedButton.icon(
-                  onPressed: _openShopScreen,
-                  icon: const Icon(Icons.shopping_cart),
-                  label: const Text('ショップ'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 18),
-                    backgroundColor: Colors.orange,
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-                const Divider(),
-              ],
+      backgroundColor: const Color(0xFF2C3E2E), // ペンデュラム本体の色
+      body: SafeArea(
+        child: Column(
+          children: [
+            // 上部ボタンエリア（スクロール可能）
+            _buildTopButtonArea(digimon),
+            
+            const SizedBox(height: 15),
+            
+            // ヘッダー（デジモン選択）
+            _buildHeader(digimon),
+            
+            const SizedBox(height: 10),
+            
+            // メイン液晶画面
+            Expanded(
+              child: _buildMainLcdScreen(digimon),
             ),
-          ),
+            
+            const SizedBox(height: 10),
+            
+            // ステータス表示エリア
+            _buildStatusBar(digimon),
+            
+            const SizedBox(height: 15),
+            
+            // 下部ボタンエリア（スクロール可能）
+            _buildBottomButtonArea(digimon),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {Color? color}) {
+  /// 上部ボタンエリア（横スクロール対応）
+  Widget _buildTopButtonArea(Digimon digimon) {
+    return Container(
+      height: 90,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        children: [
+          _buildPendulumButton(
+            icon: Icons.favorite,
+            label: 'なでる',
+            color: Colors.pink,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              setState(() {
+                digimon.pet();
+              });
+              _saveDigimon();
+              _showSnackBar('なでなで～ 機嫌 +10');
+            },
+          ),
+          const SizedBox(width: 15),
+          _buildPendulumButton(
+            icon: Icons.cleaning_services,
+            label: '掃除',
+            color: Colors.brown,
+            onPressed: digimon.poopCount > 0
+                ? () {
+                    HapticFeedback.mediumImpact();
+                    setState(() {
+                      digimon.cleanPoop();
+                    });
+                    _saveDigimon();
+                    _showSnackBar('うんちを掃除しました');
+                  }
+                : null,
+          ),
+          const SizedBox(width: 15),
+          _buildPendulumButton(
+            icon: Icons.flash_on,
+            label: '進化',
+            color: Colors.purple,
+            onPressed: digimon.canEvolve()
+                ? () {
+                    HapticFeedback.heavyImpact();
+                    setState(() {
+                      final oldStage = digimon.evolutionStage.displayName;
+                      digimon.evolve();
+                      final newStage = digimon.evolutionStage.displayName;
+                      _showSnackBar('$oldStage → $newStage に進化！');
+                    });
+                    _saveDigimon();
+                  }
+                : null,
+          ),
+          const SizedBox(width: 15),
+          _buildPendulumButton(
+            icon: Icons.settings,
+            label: '設定',
+            color: Colors.grey,
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
+              setState(() {});
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 下部ボタンエリア（横スクロール対応）
+  Widget _buildBottomButtonArea(Digimon digimon) {
+    return Container(
+      height: 90,
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        children: [
+          _buildPendulumButton(
+            icon: Icons.arrow_upward,
+            label: 'レベルUP',
+            color: Colors.green,
+            onPressed: digimon.canLevelUp()
+                ? () {
+                    HapticFeedback.mediumImpact();
+                    setState(() {
+                      digimon.levelUp();
+                    });
+                    _saveDigimon();
+                    _showSnackBar('レベルアップ！ Lv.${digimon.level}');
+                  }
+                : null,
+          ),
+          const SizedBox(width: 15),
+          _buildPendulumButton(
+            icon: Icons.sports_kabaddi,
+            label: 'バトル',
+            color: Colors.red,
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BattleScreen(
+                    playerDigimon: digimon,
+                  ),
+                ),
+              );
+              if (result == true) {
+                _saveDigimon();
+                setState(() {});
+              }
+            },
+          ),
+          const SizedBox(width: 15),
+          _buildPendulumButton(
+            icon: Icons.explore,
+            label: '冒険',
+            color: Colors.orange,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              final coins = digimon.adventure.collectCoins();
+              final enemies = digimon.adventure.defeatedEnemies;
+              if (coins > 0 || enemies > 0) {
+                digimon.addCoins(coins);
+                _saveDigimon();
+                _showSnackBar('コイン +$coins / 敵撃破 $enemies');
+              } else {
+                _showSnackBar('何も見つかりませんでした');
+              }
+              setState(() {});
+            },
+          ),
+          const SizedBox(width: 15),
+          _buildPendulumButton(
+            icon: Icons.storefront,
+            label: 'ショップ',
+            color: Colors.amber,
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ShopScreen(
+                    digimonManager: widget.digimonManager,
+                  ),
+                ),
+              );
+              if (result == true) {
+                _saveDigimon();
+                setState(() {});
+              }
+            },
+          ),
+          const SizedBox(width: 15),
+          _buildPendulumButton(
+            icon: Icons.merge_type,
+            label: 'ジョグレス',
+            color: Colors.deepPurple,
+            onPressed: widget.digimonManager.digimons.length >= 2
+                ? () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => JogressScreen(
+                          digimonManager: widget.digimonManager,
+                        ),
+                      ),
+                    );
+                    if (result == true) {
+                      _saveDigimon();
+                      setState(() {});
+                    }
+                  }
+                : null,
+          ),
+          const SizedBox(width: 15),
+          _buildPendulumButton(
+            icon: Icons.list,
+            label: 'デジモン',
+            color: Colors.blue,
+            onPressed: () {
+              _showDigimonList();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ヘッダー部分（デジモン選択）
+  Widget _buildHeader(Digimon digimon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // デジモン名
+          Expanded(
+            child: Text(
+              digimon.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // 進化段階
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Color(digimon.evolutionStage.colorValue).withOpacity(0.3),
+              border: Border.all(color: Color(digimon.evolutionStage.colorValue), width: 2),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(
+              digimon.evolutionStage.displayName,
+              style: TextStyle(
+                color: Color(digimon.evolutionStage.colorValue),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          // デジモン切り替えボタン
+          if (widget.digimonManager.digimons.length > 1)
+            IconButton(
+              icon: const Icon(Icons.swap_horiz, color: Colors.white),
+              onPressed: () {
+                _showDigimonList();
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// メイン液晶画面エリア
+  Widget _buildMainLcdScreen(Digimon digimon) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A2318),
+        border: Border.all(color: const Color(0xFF4A5A48), width: 4),
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // 液晶画面タイトルバー
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: const BoxDecoration(
+              color: Color(0xFF2C3E2E),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(11),
+                topRight: Radius.circular(11),
+              ),
+            ),
+            child: const Center(
+              child: Text(
+                'DIGITAL MONSTER',
+                style: TextStyle(
+                  color: Color(0xFF9CB68C),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+          ),
+          
+          // デジモンスプライト表示エリア
+          Expanded(
+            child: Container(
+              color: const Color(0xFF9CB68C),
+              child: Center(
+                child: DigimonSprite(
+                  stage: digimon.evolutionStage,
+                  name: digimon.name,
+                  size: 150,
+                ),
+              ),
+            ),
+          ),
+          
+          // 下部情報バー（レベルとコイン）
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+            decoration: const BoxDecoration(
+              color: Color(0xFF2C3E2E),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(11),
+                bottomRight: Radius.circular(11),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildLcdInfo('LV', digimon.level.toString()),
+                _buildLcdInfo('💰', digimon.coins.toString()),
+                _buildLcdInfo('😊', digimon.mood.toString()),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 液晶画面内の情報表示（ペンデュラム風フォント）
+  Widget _buildLcdInfo(String label, String value) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text('$label: ', style: const TextStyle(fontSize: 20, color: Colors.grey)),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF9CB68C),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(width: 5),
         Text(
           value,
-          style: TextStyle(
-            fontSize: 24,
+          style: const TextStyle(
+            color: Color(0xFF9CB68C),
+            fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: color ?? Colors.blue,
+            fontFamily: 'monospace',
           ),
         ),
       ],
     );
   }
 
-  Color _getMoodColor() {
-    if (_digimonManager.currentDigimon.mood >= 70) {
-      return Colors.green;
-    } else if (_digimonManager.currentDigimon.mood >= 40) {
-      return Colors.orange;
-    } else {
-      return Colors.red;
-    }
-  }
-
-  void _collectAdventureCoins() {
-    setState(() {
-      final collected = _digimonManager.currentDigimon.adventure.collectCoins();
-      if (collected > 0) {
-        _digimonManager.currentDigimon.addCoins(collected);
-        _showSnackBar('冒険で$collected枚のコインを手に入れた！');
-      }
-    });
-    _saveDigimon();
-  }
-
-  void _evolve() {
-    setState(() {
-      _digimonManager.currentDigimon.evolve();
-    });
-    _saveDigimon();
-    _showSnackBar('進化した！ ${_digimonManager.currentDigimon.evolutionStage.displayName}になった！');
-  }
-
-  Future<void> _startBattle() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BattleScreen(playerDigimon: _digimonManager.currentDigimon),
+  /// ステータスバー（うんちや機嫌のゲージ）
+  Widget _buildStatusBar(Digimon digimon) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A2318),
+        border: Border.all(color: const Color(0xFF4A5A48), width: 3),
+        borderRadius: BorderRadius.circular(10),
       ),
-    );
-
-    if (result == true) {
-      setState(() {});
-      await _saveDigimon();
-    }
-  }
-
-  void _showDigimonList() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      child: Column(
+        children: [
+          // 機嫌ゲージ
+          _buildGauge('機嫌', digimon.mood, 100, Colors.pink),
+          const SizedBox(height: 10),
+          // 冒険進捗と戦績
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              const Text('デジモン一覧', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _digimonManager.digimons.length,
-                  itemBuilder: (context, index) {
-                    final digimon = _digimonManager.digimons[index];
-                    final isSelected = index == _digimonManager.currentIndex;
-                    
-                    return ListTile(
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: isSelected ? Colors.blue : Colors.grey,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${index + 1}',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                      title: Text(digimon.name),
-                      subtitle: Text('Lv.${digimon.level} ${digimon.evolutionStage.displayName}'),
-                      trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
-                      onTap: () {
-                        setState(() {
-                          _digimonManager.switchDigimon(index);
-                        });
-                        _saveDigimon();
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (_digimonManager.digimons.length < _digimonManager.maxSlots)
-                ElevatedButton.icon(
-                  onPressed: _addNewDigimon,
-                  icon: const Icon(Icons.add),
-                  label: Text('新しいデジモン (${_digimonManager.digimons.length}/${_digimonManager.maxSlots})'),
-                  style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-                ),
+              _buildStatItem('💩', '${digimon.poopCount}'),
+              _buildStatItem('🗺️', '${digimon.adventure.explorationLevel}%'),
+              _buildStatItem('⚔️', '${digimon.battleWins}勝'),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  void _addNewDigimon() {
-    Navigator.pop(context);
-    
+  /// ゲージ表示（機嫌など）
+  Widget _buildGauge(String label, int current, int max, Color color) {
+    final ratio = (current / max).clamp(0.0, 1.0);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF9CB68C),
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 5),
+        Container(
+          height: 20,
+          decoration: BoxDecoration(
+            color: const Color(0xFF2C3E2E),
+            border: Border.all(color: const Color(0xFF4A5A48), width: 2),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: ratio,
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// ステータスアイテム表示
+  Widget _buildStatItem(String icon, String value) {
+    return Row(
+      children: [
+        Text(
+          icon,
+          style: const TextStyle(fontSize: 16),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Color(0xFF9CB68C),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// ペンデュラム風の丸ボタン
+  Widget _buildPendulumButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback? onPressed,
+  }) {
+    final isEnabled = onPressed != null;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            customBorder: const CircleBorder(),
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isEnabled ? color.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+                border: Border.all(
+                  color: isEnabled ? color : Colors.grey,
+                  width: 3,
+                ),
+                boxShadow: isEnabled
+                    ? [
+                        BoxShadow(
+                          color: color.withOpacity(0.5),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Icon(
+                icon,
+                color: isEnabled ? color : Colors.grey,
+                size: 30,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          label,
+          style: TextStyle(
+            color: isEnabled ? const Color(0xFF9CB68C) : Colors.grey,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// デジモンリスト表示ダイアログ
+  void _showDigimonList() {
     showDialog(
       context: context,
-      builder: (context) {
-        String newName = 'デジモン${_digimonManager.digimons.length + 1}';
-        
-        return AlertDialog(
-          title: const Text('新しいデジモン'),
-          content: TextField(
-            decoration: const InputDecoration(labelText: '名前'),
-            onChanged: (value) {
-              newName = value;
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2318),
+        title: const Text(
+          'デジモン選択',
+          style: TextStyle(color: Color(0xFF9CB68C)),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: widget.digimonManager.digimons.length,
+            itemBuilder: (context, index) {
+              final d = widget.digimonManager.digimons[index];
+              final isCurrent = index == widget.digimonManager.digimons.indexOf(
+                widget.digimonManager.currentDigimon,
+              );
+              
+              return ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Color(d.evolutionStage.colorValue),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                title: Text(
+                  d.name,
+                  style: TextStyle(
+                    color: isCurrent ? Colors.yellow : const Color(0xFF9CB68C),
+                    fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                subtitle: Text(
+                  'Lv.${d.level} ${d.evolutionStage.displayName}',
+                  style: const TextStyle(color: Color(0xFF88A878)),
+                ),
+                trailing: isCurrent
+                    ? const Icon(Icons.check_circle, color: Colors.yellow)
+                    : null,
+                onTap: () {
+                  setState(() {
+                    widget.digimonManager.switchDigimon(index);
+                  });
+                  Navigator.pop(context);
+                  _showSnackBar('${d.name} に切り替えました');
+                },
+              );
             },
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('キャンセル'),
-            ),
-            TextButton(
-              onPressed: () {
-                final newDigimon = Digimon(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  name: newName.isEmpty ? 'デジモン${_digimonManager.digimons.length + 1}' : newName,
-                );
-                
-                if (_digimonManager.addDigimon(newDigimon)) {
-                  setState(() {
-                    _digimonManager.switchDigimon(_digimonManager.digimons.length - 1);
-                  });
-                  _saveDigimon();
-                  Navigator.pop(context);
-                  _showSnackBar('${newDigimon.name}が仲間になった！');
-                }
-              },
-              child: const Text('作成'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _openJogressScreen() async {
-    int totalCoins = 0;
-    for (var digimon in _digimonManager.digimons) {
-      totalCoins += digimon.coins;
-    }
-
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => JogressScreen(
-          digimonManager: _digimonManager,
-          totalCoins: totalCoins,
-          shopManager: _shopManager, // ShopManagerを渡す
         ),
-      ),
-    );
-
-    if (result != null && result['success'] == true) {
-      final coinsSpent = result['coinsSpent'] as int;
-      final resultName = result['resultName'] as String;
-
-      setState(() {
-        _digimonManager.currentDigimon.addCoins(-coinsSpent);
-      });
-
-      await _saveDigimon();
-      _showSnackBar('🎉 $resultNameに進化した！');
-    }
-  }
-
-  Future<void> _openShopScreen() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ShopScreen(
-          digimonManager: _digimonManager,
-          shopManager: _shopManager,
-        ),
-      ),
-    );
-
-    if (result != null && result['success'] == true) {
-      await _digimonManager.initialize();
-      
-      if (mounted) {
-        setState(() {});
-      }
-    }
-  }
-
-  /// 設定画面を開く（NEW!）
-  Future<void> _openSettingsScreen() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const SettingsScreen(),
-      ),
-    );
-  }
-
-  void _showDebugMenu() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.build, color: Colors.orange),
-                    SizedBox(width: 8),
-                    Text('デバッグメニュー', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.orange)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Text('⚠️ 開発用機能です', style: TextStyle(color: Colors.red, fontSize: 12)),
-                const Divider(height: 24),
-
-                const Text('現在のデジモンを強化', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                
-                ElevatedButton.icon(
-                  onPressed: () => _debugSetLevel(30),
-                  icon: const Icon(Icons.trending_up),
-                  label: const Text('レベル30にする'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-                ),
-                const SizedBox(height: 8),
-                
-                ElevatedButton.icon(
-                  onPressed: () => _debugSetEvolution(EvolutionStage.ultimate),
-                  icon: const Icon(Icons.auto_awesome),
-                  label: const Text('究極体に進化'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
-                ),
-                const SizedBox(height: 8),
-                
-                ElevatedButton.icon(
-                  onPressed: _debugMaxStats,
-                  icon: const Icon(Icons.star),
-                  label: const Text('全ステータスMAX'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-                ),
-                const SizedBox(height: 8),
-                
-                ElevatedButton.icon(
-                  onPressed: () => _debugAddCoins(1000),
-                  icon: const Icon(Icons.monetization_on),
-                  label: const Text('コイン+1000'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                ),
-
-                const Divider(height: 24),
-
-                const Text('ジョグレステスト用', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                
-                ElevatedButton.icon(
-                  onPressed: _debugCreateJogressPair,
-                  icon: const Icon(Icons.merge_type),
-                  label: const Text('究極体ペアを作成'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
-                ),
-                const SizedBox(height: 8),
-                
-                Text(
-                  '現在のスロット: ${_digimonManager.digimons.length}/${_digimonManager.maxSlots}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-
-                const Divider(height: 24),
-
-                const Text('データ管理', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                
-                ElevatedButton.icon(
-                  onPressed: _debugClearAllData,
-                  icon: const Icon(Icons.delete_forever),
-                  label: const Text('全データ削除'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                ),
-
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('閉じる'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _debugSetLevel(int targetLevel) {
-    setState(() {
-      DebugHelper.setLevel(_digimonManager.currentDigimon, targetLevel);
-    });
-    _saveDigimon();
-    Navigator.pop(context);
-    _showSnackBar('レベルを$targetLevelに設定しました');
-  }
-
-  void _debugSetEvolution(EvolutionStage targetStage) {
-    setState(() {
-      DebugHelper.setEvolutionStage(_digimonManager.currentDigimon, targetStage);
-    });
-    _saveDigimon();
-    Navigator.pop(context);
-    _showSnackBar('${targetStage.displayName}に進化しました');
-  }
-
-  void _debugMaxStats() {
-    setState(() {
-      DebugHelper.maxStats(_digimonManager.currentDigimon);
-    });
-    _saveDigimon();
-    Navigator.pop(context);
-    _showSnackBar('全ステータスをMAXにしました');
-  }
-
-  void _debugAddCoins(int amount) {
-    setState(() {
-      _digimonManager.currentDigimon.addCoins(amount);
-    });
-    _saveDigimon();
-    Navigator.pop(context);
-    _showSnackBar('コインを$amount枚追加しました');
-  }
-
-  void _debugCreateJogressPair() {
-    if (_digimonManager.digimons.length + 2 > _digimonManager.maxSlots) {
-      _digimonManager.expandSlots(2);
-    }
-
-    final pair = DebugHelper.createJogressTestPair();
-    
-    debugPrint('=== 究極体ペア作成 ===');
-    debugPrint('  1. ${pair[0].name} (ID: ${pair[0].id})');
-    debugPrint('  2. ${pair[1].name} (ID: ${pair[1].id})');
-    debugPrint('===================');
-    
-    setState(() {
-      for (var digimon in pair) {
-        _digimonManager.addDigimon(digimon);
-      }
-    });
-    
-    _saveDigimon();
-    Navigator.pop(context);
-    _showSnackBar('究極体ペア（ウォーグレイモン、メタルガルルモン）を作成しました');
-  }
-
-  void _debugClearAllData() {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('⚠️ 警告'),
-        content: const Text('全てのデジモンデータを削除しますか？\nこの操作は取り消せません。'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('キャンセル'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              if (context.mounted) {
-                Navigator.pop(context);
-              }
-              
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.clear();
-              
-              if (mounted) {
-                setState(() {
-                  _isLoading = true;
-                });
-                await _loadDigimon();
-                _showSnackBar('全データを削除しました');
-              }
-            },
-            child: const Text('削除', style: TextStyle(color: Colors.red)),
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              '閉じる',
+              style: TextStyle(color: Color(0xFF9CB68C)),
+            ),
           ),
         ],
       ),
