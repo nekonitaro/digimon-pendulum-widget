@@ -1,41 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
 import 'screens/home_screen.dart';
+import 'services/digimon_manager.dart';
 import 'services/widget_service.dart';
 
+// main関数も修正
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // ウィジェットのコールバック登録
   await WidgetService.registerCallbacks();
   
-  // 初期URLをチェック
   final initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
-  // debugPrint('main.dart: 初期URI = $initialUri');
   
-  // ウィジェットクリックのストリームを監視
-  HomeWidget.widgetClicked.listen((uri) {
-    // debugPrint('main.dart: ウィジェットクリック検出 - $uri');
-  });
+  // DigimonManagerを初期化
+  final digimonManager = DigimonManager();
+  await digimonManager.initialize();
   
-  runApp(MyApp(initialUri: initialUri));
+  runApp(MyApp(
+    digimonManager: digimonManager,
+    initialUri: initialUri,
+  ));
 }
 
 class MyApp extends StatelessWidget {
+    final DigimonManager digimonManager; // 追加
   final Uri? initialUri;
   
-  const MyApp({super.key, this.initialUri});
-
+   const MyApp({
+    super.key, 
+    required this.digimonManager,
+    this.initialUri
+  });
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'デジモン育成',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+      home: HomeScreen(
+        digimonManager: digimonManager,
       ),
-      home: HomeScreen(initialUri: initialUri),
-      debugShowCheckedModeBanner: false,
     );
   }
 }

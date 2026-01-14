@@ -60,7 +60,7 @@ class _DigimonSpriteState extends State<DigimonSprite>
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha:0.3),
             blurRadius: 8,
             offset: const Offset(2, 2),
           ),
@@ -104,7 +104,7 @@ class _LcdPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF88A878).withOpacity(0.3)
+      ..color = const Color(0xFF88A878).withValues(alpha:0.3)
       ..style = PaintingStyle.fill;
 
     // 格子状のドットパターン
@@ -297,7 +297,7 @@ class _DigimonPixelPainter extends CustomPainter {
     // 輝きエフェクト（フレームで点滅）
     if (frame % 2 == 0) {
       final glowPaint = Paint()
-        ..color = Colors.yellow.withOpacity(0.5)
+        ..color = Colors.yellow.withValues(alpha:0.5)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
       canvas.drawCircle(Offset(cx, cy), ps * 6, glowPaint);
     }

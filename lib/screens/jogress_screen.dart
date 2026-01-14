@@ -1,3 +1,4 @@
+import 'package:digimon_pendulum/models/evolution_stage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
@@ -129,7 +130,7 @@ class _JogressScreenState extends State<JogressScreen>
     final success = widget.digimonManager.executeJogress(
       _selectedIndex1!,
       _selectedIndex2!,
-      _combination!.coinsRequired,
+      _combination!.requiredCoins,
     );
 
     if (!mounted) return;
@@ -139,7 +140,7 @@ class _JogressScreenState extends State<JogressScreen>
       SystemSound.play(SystemSoundType.click);
       
       _showSnackBar(
-        'ジョグレス成功！ ${_combination!.result} が誕生！',
+        'ジョグレス成功！ ${_combination!.name} が誕生！',
         Colors.green,
       );
       
@@ -202,7 +203,7 @@ class _JogressScreenState extends State<JogressScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${_combination!.result} に進化します',
+              '${_combination!.name} に進化します',
               style: const TextStyle(
                 color: Color(0xFF9CB68C),
                 fontSize: 16,
@@ -225,7 +226,7 @@ class _JogressScreenState extends State<JogressScreen>
                       const Text('💰', style: TextStyle(fontSize: 20)),
                       const SizedBox(width: 8),
                       Text(
-                        '${_combination!.coinsRequired} コイン',
+                        '${_combination!.requiredCoins} コイン',
                         style: const TextStyle(
                           color: Colors.amber,
                           fontSize: 18,
@@ -424,7 +425,7 @@ class _JogressScreenState extends State<JogressScreen>
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: digimon.evolutionStage.getColor(),
+            color: digimon.Color(evolutionStage.colorValue),
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 2),
           ),
@@ -465,7 +466,7 @@ class _JogressScreenState extends State<JogressScreen>
         ),
         const SizedBox(height: 5),
         Text(
-          _combination!.result,
+          _combination!.name,
           style: const TextStyle(
             color: Colors.yellow,
             fontSize: 12,
@@ -592,7 +593,7 @@ class _JogressScreenState extends State<JogressScreen>
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: digimon.evolutionStage.getColor(),
+                        color: digimon.Color(evolutionStage.colorValue),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: isSelected ? Colors.deepPurple : Colors.white,
@@ -617,7 +618,7 @@ class _JogressScreenState extends State<JogressScreen>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Lv.${digimon.level} ${digimon.evolutionStage.getDisplayName()}',
+                            'Lv.${digimon.level} ${digimon.evolutionStage.displayName}',
                             style: const TextStyle(
                               color: Color(0xFF88A878),
                               fontSize: 12,
@@ -720,12 +721,12 @@ class _JogressScreenState extends State<JogressScreen>
                       width: 150,
                       height: 150,
                       decoration: BoxDecoration(
-                        color: digimon.evolutionStage.getColor(),
+                        color: digimon.Color(evolutionStage.colorValue),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 3),
                         boxShadow: [
                           BoxShadow(
-                            color: digimon.evolutionStage.getColor().withValues(alpha: 0.8),
+                            color: digimon.Color(evolutionStage.colorValue).withValues(alpha: 0.8),
                             blurRadius: 30,
                             spreadRadius: 10,
                           ),
@@ -759,12 +760,12 @@ class _JogressScreenState extends State<JogressScreen>
                       width: 150,
                       height: 150,
                       decoration: BoxDecoration(
-                        color: digimon.evolutionStage.getColor(),
+                        color: digimon.Color(evolutionStage.colorValue),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 3),
                         boxShadow: [
                           BoxShadow(
-                            color: digimon.evolutionStage.getColor().withValues(alpha: 0.8),
+                            color: digimon.Color(evolutionStage.colorValue).withValues(alpha: 0.8),
                             blurRadius: 30,
                             spreadRadius: 10,
                           ),
@@ -829,7 +830,7 @@ class _JogressScreenState extends State<JogressScreen>
                           ),
                           const SizedBox(height: 30),
                           Text(
-                            _combination!.result,
+                            _combination!.name,
                             style: const TextStyle(
                               color: Colors.yellow,
                               fontSize: 32,

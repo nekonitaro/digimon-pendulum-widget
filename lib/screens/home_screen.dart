@@ -16,10 +16,7 @@ import 'settings_screen.dart';
 class HomeScreen extends StatefulWidget {
   final DigimonManager digimonManager;
 
-  const HomeScreen({
-    super.key,
-    required this.digimonManager,
-  });
+  const HomeScreen({super.key, required this.digimonManager});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -27,12 +24,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Timer? _updateTimer;
-  
+
   @override
   void initState() {
     super.initState();
     _initializeScreen();
-    
+
     // 定期的な更新（1分ごと）
     _updateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       _updateDigimon();
@@ -48,10 +45,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _initializeScreen() async {
     // 初期化処理
     _updateDigimon();
-    
+
     // 通知チェック
     await widget.digimonManager.currentDigimon.checkAndNotify();
-    
+
     // ディープリンク設定
     DeepLinkService.initialize((uri) => _handleWidgetClick(uri));
   }
@@ -69,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleWidgetClick(Uri? uri) {
     if (uri == null) return;
-    
+
     if (uri.host == 'addcoin') {
       widget.digimonManager.currentDigimon.addCoins(1);
       _saveDigimon();
@@ -105,26 +102,24 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // 上部ボタンエリア（スクロール可能）
             _buildTopButtonArea(digimon),
-            
+
             const SizedBox(height: 15),
-            
+
             // ヘッダー（デジモン選択）
             _buildHeader(digimon),
-            
+
             const SizedBox(height: 10),
-            
+
             // メイン液晶画面
-            Expanded(
-              child: _buildMainLcdScreen(digimon),
-            ),
-            
+            Expanded(child: _buildMainLcdScreen(digimon)),
+
             const SizedBox(height: 10),
-            
+
             // ステータス表示エリア
             _buildStatusBar(digimon),
-            
+
             const SizedBox(height: 15),
-            
+
             // 下部ボタンエリア（スクロール可能）
             _buildBottomButtonArea(digimon),
           ],
@@ -197,9 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () async {
               await Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
               setState(() {});
             },
@@ -242,9 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => BattleScreen(
-                    playerDigimon: digimon,
-                  ),
+                  builder: (context) => BattleScreen(playerDigimon: digimon),
                 ),
               );
               if (result == true) {
@@ -281,9 +272,8 @@ class _HomeScreenState extends State<HomeScreen> {
               final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ShopScreen(
-                    digimonManager: widget.digimonManager,
-                  ),
+                  builder: (context) =>
+                      ShopScreen(digimonManager: widget.digimonManager),
                 ),
               );
               if (result == true) {
@@ -352,8 +342,11 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Color(digimon.evolutionStage.colorValue).withOpacity(0.3),
-              border: Border.all(color: Color(digimon.evolutionStage.colorValue), width: 2),
+              color: Color(digimon.evolutionStage.colorValue).withValues(alpha:0.3),
+              border: Border.all(
+                color: Color(digimon.evolutionStage.colorValue),
+                width: 2,
+              ),
               borderRadius: BorderRadius.circular(15),
             ),
             child: Text(
@@ -389,7 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha:0.5),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -420,7 +413,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          
+
           // デジモンスプライト表示エリア
           Expanded(
             child: Container(
@@ -434,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          
+
           // 下部情報バー（レベルとコイン）
           Container(
             width: double.infinity,
@@ -554,10 +547,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildStatItem(String icon, String value) {
     return Row(
       children: [
-        Text(
-          icon,
-          style: const TextStyle(fontSize: 16),
-        ),
+        Text(icon, style: const TextStyle(fontSize: 16)),
         const SizedBox(width: 5),
         Text(
           value,
@@ -592,7 +582,9 @@ class _HomeScreenState extends State<HomeScreen> {
               height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isEnabled ? color.withOpacity(0.3) : Colors.grey.withOpacity(0.2),
+                color: isEnabled
+                    ? color.withValues(alpha:0.3)
+                    : Colors.grey.withValues(alpha:0.2),
                 border: Border.all(
                   color: isEnabled ? color : Colors.grey,
                   width: 3,
@@ -600,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 boxShadow: isEnabled
                     ? [
                         BoxShadow(
-                          color: color.withOpacity(0.5),
+                          color: color.withValues(alpha:0.5),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -634,10 +626,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1A2318),
-        title: const Text(
-          'デジモン選択',
-          style: TextStyle(color: Color(0xFF9CB68C)),
-        ),
+        title: const Text('デジモン選択', style: TextStyle(color: Color(0xFF9CB68C))),
         content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
@@ -645,10 +634,12 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: widget.digimonManager.digimons.length,
             itemBuilder: (context, index) {
               final d = widget.digimonManager.digimons[index];
-              final isCurrent = index == widget.digimonManager.digimons.indexOf(
-                widget.digimonManager.currentDigimon,
-              );
-              
+              final isCurrent =
+                  index ==
+                  widget.digimonManager.digimons.indexOf(
+                    widget.digimonManager.currentDigimon,
+                  );
+
               return ListTile(
                 leading: Container(
                   width: 40,

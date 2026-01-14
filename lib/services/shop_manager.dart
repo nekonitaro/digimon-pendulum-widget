@@ -1,5 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:flutter/foundation.dart';
 import '../models/shop_item.dart';
 import '../models/digimon.dart';
 import '../models/evolution_stage.dart'; // 追加
@@ -29,14 +29,14 @@ class ShopManager {
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     jogressItemCount = prefs.getInt('jogress_item_count') ?? 0;
-    print('ショップデータ読み込み: ジョグレスストーン $jogressItemCount個');
+    debugPrint('ショップデータ読み込み: ジョグレスストーン $jogressItemCount個');
   }
 
   /// データを保存
   Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('jogress_item_count', jogressItemCount);
-    print('ショップデータ保存: ジョグレスストーン $jogressItemCount個');
+    debugPrint('ショップデータ保存: ジョグレスストーン $jogressItemCount個');
   }
 
   /// アイテムを購入
@@ -83,23 +83,23 @@ class ShopManager {
 
   /// コインを消費（現在のデジモンから優先的に）
   void _spendCoins(int amount) {
-    print('=== コイン消費 ===');
-    print('  消費額: $amount');
-    print('  消費前の合計: ${_getTotalCoins()}');
+    debugPrint('=== コイン消費 ===');
+    debugPrint('  消費額: $amount');
+    debugPrint('  消費前の合計: ${_getTotalCoins()}');
     
     int remaining = amount;
     
     // 現在のデジモンから優先的に消費
     final current = digimonManager.currentDigimon;
-    print('  ${current.name}のコイン: ${current.coins}');
+    debugPrint('  ${current.name}のコイン: ${current.coins}');
     
     if (current.coins >= remaining) {
       // 十分なコインがある場合
       final newCoins = current.coins - remaining;
       current.coins = newCoins; // 直接代入
-      print('  → ${current.name}から$remaining消費（残: ${current.coins}）');
-      print('  消費後の合計: ${_getTotalCoins()}');
-      print('================');
+      debugPrint('  → ${current.name}から$remaining消費（残: ${current.coins}）');
+      debugPrint('  消費後の合計: ${_getTotalCoins()}');
+      debugPrint('================');
       return;
     }
     
@@ -108,7 +108,7 @@ class ShopManager {
     remaining -= current.coins;
     current.coins = 0;
     if (currentUsed > 0) {
-      print('  → ${current.name}から$currentUsed消費（残り: $remaining）');
+      debugPrint('  → ${current.name}から$currentUsed消費（残り: $remaining）');
     }
     
     // 他のデジモンから消費
@@ -116,12 +116,12 @@ class ShopManager {
       if (digimon.id == current.id) continue;
       if (remaining <= 0) break;
       
-      print('  ${digimon.name}のコイン: ${digimon.coins}');
+      debugPrint('  ${digimon.name}のコイン: ${digimon.coins}');
       
       if (digimon.coins >= remaining) {
         final newCoins = digimon.coins - remaining;
         digimon.coins = newCoins; // 直接代入
-        print('  → ${digimon.name}から$remaining消費（残: ${digimon.coins}）');
+        debugPrint('  → ${digimon.name}から$remaining消費（残: ${digimon.coins}）');
         remaining = 0;
         break;
       }
@@ -131,12 +131,12 @@ class ShopManager {
       remaining -= digimon.coins;
       digimon.coins = 0;
       if (used > 0) {
-        print('  → ${digimon.name}から$used消費（残り: $remaining）');
+        debugPrint('  → ${digimon.name}から$used消費（残り: $remaining）');
       }
     }
-    
-    print('  消費後の合計: ${_getTotalCoins()}');
-    print('================');
+
+    debugPrint('  消費後の合計: ${_getTotalCoins()}');
+    debugPrint('================');
   }
 
   /// 新しい卵を購入
@@ -183,7 +183,7 @@ class ShopManager {
     _spendCoins(price);
     jogressItemCount++;
     
-    print('  ジョグレスストーン購入: 所持数 $jogressItemCount');
+    debugPrint('  ジョグレスストーン購入: 所持数 $jogressItemCount');
     
     // データを保存
     save();
@@ -219,7 +219,7 @@ class ShopManager {
     // 強制進化（条件を無視）
     final nextStage = current.evolutionStage.next!;
     current.evolutionStage = nextStage;
-    print('  進化: ${current.name} → ${nextStage.displayName}');
+    debugPrint('  進化: ${current.name} → ${nextStage.displayName}');
 
     return PurchaseResult(
       success: true,
@@ -255,11 +255,11 @@ class ShopManager {
   bool useJogressItem() {
     if (jogressItemCount > 0) {
       jogressItemCount--;
-      print('ジョグレスストーン使用: 残り $jogressItemCount個');
+      debugPrint('ジョグレスストーン使用: 残り $jogressItemCount個');
       save(); // 保存
       return true;
     }
-    print('ジョグレスストーン不足');
+    debugPrint('ジョグレスストーン不足');
     return false;
   }
 

@@ -1,230 +1,137 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:math' as math;
-import '../models/digimon.dart';
-import '../models/jogress_combination.dart';
+import '../models/shop_item.dart';
 import '../services/digimon_manager.dart';
-import '../widgets/digimon_sprite.dart';
+import '../services/shop_manager.dart';
 
-class JogressScreen extends StatefulWidget {
+class ShopScreen extends StatefulWidget {
   final DigimonManager digimonManager;
 
-  const JogressScreen({
+  const ShopScreen({
     super.key,
     required this.digimonManager,
   });
 
   @override
-  State<JogressScreen> createState() => _JogressScreenState();
+  State<ShopScreen> createState() => _ShopScreenState();
 }
 
-class _JogressScreenState extends State<JogressScreen>
-    with TickerProviderStateMixin {
-  int? _selectedIndex1;
-  int? _selectedIndex2;
-  JogressCombination? _combination;
-  bool _isJogressing = false;
+class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
+  late ShopManager _shopManager;
+  bool _isLoading = true;
   
   // アニメーションコントローラー
-  late AnimationController _glowController;
-  late AnimationController _rotateController;
-  late AnimationController _mergeController;
-  late AnimationController _explosionController;
-  late Animation<double> _glowAnimation;
-  late Animation<double> _rotateAnimation;
-  late Animation<double> _mergeAnimation;
-  late Animation<double> _explosionAnimation;
+  late AnimationController _coinController;
+  late Animation<double> _coinAnimation;
 
   @override
   void initState() {
     super.initState();
+    _initializeShop();
     
-    // グローエフェクト（選択時）
-    _glowController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+    // コインアニメーション（キラキラ）
+    _coinController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat(reverse: true);
     
-    _glowAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    );
-    
-    // 回転エフェクト（ジョグレス準備）
-    _rotateController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-    
-    _rotateAnimation = Tween<double>(begin: 0, end: math.pi * 4).animate(
-      CurvedAnimation(parent: _rotateController, curve: Curves.easeInOut),
-    );
-    
-    // 合体エフェクト
-    _mergeController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-    
-    _mergeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _mergeController, curve: Curves.easeInOut),
-    );
-    
-    // 爆発エフェクト
-    _explosionController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    
-    _explosionAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _explosionController, curve: Curves.easeOut),
+    _coinAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _coinController, curve: Curves.easeInOut),
     );
   }
 
   @override
   void dispose() {
-    _glowController.dispose();
-    _rotateController.dispose();
-    _mergeController.dispose();
-    _explosionController.dispose();
+    _coinController.dispose();
     super.dispose();
   }
 
-  void _selectDigimon(int index) {
+  Future<void> _initializeShop() async {
+    _shopManager = ShopManager(digimonManager: widget.digimonManager);
+    await _shopManager.load();
     setState(() {
-      if (_selectedIndex1 == null) {
-        _selectedIndex1 = index;
-        HapticFeedback.lightImpact();
-      } else if (_selectedIndex2 == null && _selectedIndex1 != index) {
-        _selectedIndex2 = index;
-        HapticFeedback.mediumImpact();
-        _checkCombination();
-      } else {
-        _selectedIndex1 = null;
-        _selectedIndex2 = null;
-        _combination = null;
-        HapticFeedback.lightImpact();
-      }
+      _isLoading = false;
     });
   }
 
-  void _checkCombination() {
-    if (_selectedIndex1 == null || _selectedIndex2 == null) return;
-    
-    final d1 = widget.digimonManager.digimons[_selectedIndex1!];
-    final d2 = widget.digimonManager.digimons[_selectedIndex2!];
-    
-    setState(() {
-      _combination = d1.getJogressCombination(d2);
-    });
-  }
-
-  Future<void> _executeJogress() async {
-    if (_selectedIndex1 == null || _selectedIndex2 == null || _combination == null) {
-      return;
-    }
-
-    final d1 = widget.digimonManager.digimons[_selectedIndex1!];
-    final d2 = widget.digimonManager.digimons[_selectedIndex2!];
-
-    // 確認ダイアログ
-    final confirm = await _showJogressConfirmDialog();
+  Future<void> _purchaseItem(ShopItem item) async {
+    // 購入確認ダイアログ
+    final confirm = await _showPurchaseDialog(item);
     if (confirm != true) return;
 
-    setState(() {
-      _isJogressing = true;
-    });
+    // 振動
+    HapticFeedback.mediumImpact();
 
-    // ジョグレス演出シーケンス
-    await _runJogressSequence();
-
-    // 実際のジョグレス実行
-    final success = widget.digimonManager.executeJogress(
-      _selectedIndex1!,
-      _selectedIndex2!,
-      _combination!.requiredCoins,
-    );
+    // 購入実行
+    final result = await _shopManager.purchaseItem(item);
 
     if (!mounted) return;
 
-    if (success) {
-      HapticFeedback.heavyImpact();
+    if (result.success) {
+      // 成功時の演出
+      _showPurchaseSuccessAnimation(item);
+      
+      // 効果音（システム音）
       SystemSound.play(SystemSoundType.click);
       
+      // 成功メッセージ
       _showSnackBar(
-        'ジョグレス成功！ ${_combination!.resultName} が誕生！',
+        '${item.name} を購入しました！',
         Colors.green,
       );
       
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (!mounted) return;
-      Navigator.pop(context, true);
+      setState(() {});
     } else {
+      // 失敗時の振動
       HapticFeedback.heavyImpact();
-      _showSnackBar('ジョグレスに失敗しました', Colors.red);
       
-      setState(() {
-        _isJogressing = false;
-        _selectedIndex1 = null;
-        _selectedIndex2 = null;
-        _combination = null;
-      });
+      // エラーメッセージ
+      _showSnackBar(
+        result.message,
+        Colors.red,
+      );
     }
   }
 
-  Future<void> _runJogressSequence() async {
-    // フェーズ1: 回転開始
-    _rotateController.forward();
-    await Future.delayed(const Duration(milliseconds: 500));
-    HapticFeedback.mediumImpact();
-    
-    // フェーズ2: 合体
-    await Future.delayed(const Duration(milliseconds: 1000));
-    _mergeController.forward();
-    await Future.delayed(const Duration(milliseconds: 500));
-    HapticFeedback.heavyImpact();
-    
-    // フェーズ3: 爆発エフェクト
-    await Future.delayed(const Duration(milliseconds: 1000));
-    _explosionController.forward();
-    SystemSound.play(SystemSoundType.click);
-    
-    await Future.delayed(const Duration(milliseconds: 1000));
-  }
-
-  Future<bool?> _showJogressConfirmDialog() {
+  Future<bool?> _showPurchaseDialog(ShopItem item) {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1A2318),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15),
-          side: const BorderSide(color: Colors.deepPurple, width: 3),
+          side: const BorderSide(color: Color(0xFF4A5A48), width: 3),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Text('🔀', style: TextStyle(fontSize: 32)),
-            SizedBox(width: 10),
             Text(
-              'ジョグレス進化',
-              style: TextStyle(
-                color: Color(0xFF9CB68C),
-                fontWeight: FontWeight.bold,
+              item.icon,
+              style: const TextStyle(fontSize: 32),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                item.name,
+                style: const TextStyle(
+                  color: Color(0xFF9CB68C),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${_combination!.resultName} に進化します',
+              item.description,
               style: const TextStyle(
                 color: Color(0xFF9CB68C),
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+                fontSize: 14,
               ),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -232,47 +139,30 @@ class _JogressScreenState extends State<JogressScreen>
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: Colors.amber, width: 2),
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('💰', style: TextStyle(fontSize: 20)),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${_combination!.requiredCoins} コイン',
-                        style: const TextStyle(
-                          color: Colors.amber,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                  const Text(
+                    '💰',
+                    style: TextStyle(fontSize: 24),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('💎', style: TextStyle(fontSize: 20)),
-                      const SizedBox(width: 8),
-                      const Text(
-                        '1 ストーン',
-                        style: TextStyle(
-                          color: Colors.deepPurple,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(width: 10),
+                  Text(
+                    '${item.price} コイン',
+                    style: const TextStyle(
+                      color: Colors.amber,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 15),
-            const Text(
-              '※合体元のデジモンは消滅します',
-              style: TextStyle(
-                color: Colors.red,
+            Text(
+              '購入しますか？',
+              style: const TextStyle(
+                color: Color(0xFF9CB68C),
                 fontSize: 12,
               ),
             ),
@@ -289,15 +179,30 @@ class _JogressScreenState extends State<JogressScreen>
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.deepPurple.withOpacity(0.3),
-              foregroundColor: Colors.deepPurple,
-              side: const BorderSide(color: Colors.deepPurple, width: 2),
+              backgroundColor: Colors.green.withOpacity(0.3),
+              foregroundColor: Colors.green,
+              side: const BorderSide(color: Colors.green, width: 2),
             ),
-            child: const Text('ジョグレス！'),
+            child: const Text('購入'),
           ),
         ],
       ),
     );
+  }
+
+  void _showPurchaseSuccessAnimation(ShopItem item) {
+    // オーバーレイで購入成功エフェクト
+    final overlay = Overlay.of(context);
+    final overlayEntry = OverlayEntry(
+      builder: (context) => _PurchaseSuccessOverlay(item: item),
+    );
+    
+    overlay.insert(overlayEntry);
+    
+    // 2秒後に削除
+    Future.delayed(const Duration(seconds: 2), () {
+      overlayEntry.remove();
+    });
   }
 
   void _showSnackBar(String message, Color color) {
@@ -312,78 +217,257 @@ class _JogressScreenState extends State<JogressScreen>
     );
   }
 
+  void _showCoinBreakdown() {
+    final totalCoins = widget.digimonManager.digimons
+        .fold<int>(0, (sum, d) => sum + d.coins);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2318),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: const BorderSide(color: Color(0xFF4A5A48), width: 3),
+        ),
+        title: const Row(
+          children: [
+            Text('💰', style: TextStyle(fontSize: 28)),
+            SizedBox(width: 10),
+            Text(
+              'コイン内訳',
+              style: TextStyle(
+                color: Color(0xFF9CB68C),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ...widget.digimonManager.digimons.map((d) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      d.name,
+                      style: const TextStyle(
+                        color: Color(0xFF9CB68C),
+                        fontSize: 14,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text(
+                    '${d.coins}',
+                    style: const TextStyle(
+                      color: Colors.amber,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            )),
+            const Divider(color: Color(0xFF4A5A48), thickness: 2),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '合計',
+                    style: TextStyle(
+                      color: Color(0xFF9CB68C),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '$totalCoins',
+                    style: const TextStyle(
+                      color: Colors.amber,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              '閉じる',
+              style: TextStyle(color: Color(0xFF9CB68C)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF2C3E2E),
+        appBar: AppBar(
+          title: const Text('SHOP'),
+          backgroundColor: const Color(0xFF2C3E2E),
+          foregroundColor: Colors.white,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF9CB68C),
+          ),
+        ),
+      );
+    }
+
+    final totalCoins = widget.digimonManager.digimons
+        .fold<int>(0, (sum, d) => sum + d.coins);
+
     return Scaffold(
       backgroundColor: const Color(0xFF2C3E2E),
       appBar: AppBar(
-        title: const Text('JOGRESS'),
+        title: const Text('SHOP'),
         backgroundColor: const Color(0xFF2C3E2E),
         foregroundColor: Colors.white,
+        actions: [
+          // コイン内訳ボタン
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: _showCoinBreakdown,
+            tooltip: 'コイン内訳',
+          ),
+        ],
       ),
       body: SafeArea(
-        child: _isJogressing
-            ? _buildJogressAnimation()
-            : _buildSelectionScreen(),
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            
+            // コイン表示エリア
+            _buildCoinDisplay(totalCoins),
+            
+            const SizedBox(height: 15),
+            
+            // ジョグレスストーン所持数
+            if (_shopManager.jogressItemCount > 0)
+              _buildJogressStoneDisplay(),
+            
+            // ショップアイテムリスト
+            Expanded(
+              child: _buildShopItemList(),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSelectionScreen() {
-    return Column(
-      children: [
-        const SizedBox(height: 15),
-        
-        // 説明文
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A2318),
-            border: Border.all(color: Colors.deepPurple, width: 2),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Text(
-            '究極体デジモンを2体選択してください',
-            style: TextStyle(
-              color: Color(0xFF9CB68C),
-              fontSize: 14,
+  /// コイン表示エリア
+  Widget _buildCoinDisplay(int totalCoins) {
+    return AnimatedBuilder(
+      animation: _coinAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _coinAnimation.value,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A2318),
+              border: Border.all(color: Colors.amber, width: 3),
+              borderRadius: BorderRadius.circular(15),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.amber.withOpacity(0.3),
+                  blurRadius: 15,
+                  spreadRadius: 2,
+                ),
+              ],
             ),
-            textAlign: TextAlign.center,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  '💰',
+                  style: TextStyle(fontSize: 40),
+                ),
+                const SizedBox(width: 15),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '所持コイン',
+                      style: TextStyle(
+                        color: Color(0xFF9CB68C),
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      '$totalCoins',
+                      style: const TextStyle(
+                        color: Colors.amber,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        
-        const SizedBox(height: 15),
-        
-        // 選択プレビュー
-        if (_selectedIndex1 != null || _selectedIndex2 != null)
-          _buildSelectionPreview(),
-        
-        const SizedBox(height: 15),
-        
-        // デジモンリスト
-        Expanded(
-          child: _buildDigimonList(),
-        ),
-        
-        const SizedBox(height: 15),
-        
-        // ジョグレスボタン
-        if (_combination != null)
-          _buildJogressButton(),
-        
-        const SizedBox(height: 15),
-      ],
+        );
+      },
     );
   }
 
-  Widget _buildSelectionPreview() {
+  /// ジョグレスストーン表示
+  Widget _buildJogressStoneDisplay() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFF1A2318),
-        border: Border.all(color: const Color(0xFF4A5A48), width: 3),
+        border: Border.all(color: Colors.deepPurple, width: 2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            '💎',
+            style: TextStyle(fontSize: 24),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            'ジョグレスストーン × ${_shopManager.jogressItemCount}',
+            style: const TextStyle(
+              color: Colors.deepPurple,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ショップアイテムリスト
+  Widget _buildShopItemList() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A2318),
+        border: Border.all(color: const Color(0xFF4A5A48), width: 4),
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
@@ -393,140 +477,9 @@ class _JogressScreenState extends State<JogressScreen>
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // デジモン1
-          if (_selectedIndex1 != null)
-            _buildPreviewDigimon(widget.digimonManager.digimons[_selectedIndex1!]),
-          
-          // 合体アイコン
-          if (_selectedIndex1 != null && _selectedIndex2 != null)
-            AnimatedBuilder(
-              animation: _glowAnimation,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _glowAnimation.value,
-                  child: const Text(
-                    '➕',
-                    style: TextStyle(fontSize: 40, color: Colors.deepPurple),
-                  ),
-                );
-              },
-            ),
-          
-          // デジモン2
-          if (_selectedIndex2 != null)
-            _buildPreviewDigimon(widget.digimonManager.digimons[_selectedIndex2!]),
-          
-          // 結果プレビュー
-          if (_combination != null) ...[
-            AnimatedBuilder(
-              animation: _glowAnimation,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _glowAnimation.value,
-                  child: const Text(
-                    '→',
-                    style: TextStyle(fontSize: 40, color: Colors.yellow),
-                  ),
-                );
-              },
-            ),
-            _buildResultPreview(),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPreviewDigimon(Digimon digimon) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Color(digimon.evolutionStage.colorValue),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-          ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          digimon.name,
-          style: const TextStyle(
-            color: Color(0xFF9CB68C),
-            fontSize: 10,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildResultPreview() {
-    return Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFD700), // ゴールド
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.yellow, width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.yellow.withOpacity(0.5),
-                blurRadius: 15,
-                spreadRadius: 3,
-              ),
-            ],
-          ),
-          child: const Center(
-            child: Text('⭐', style: TextStyle(fontSize: 30)),
-          ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          _combination!.resultName,
-          style: const TextStyle(
-            color: Colors.yellow,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDigimonList() {
-    final ultimateDigimons = widget.digimonManager.digimons
-        .asMap()
-        .entries
-        .where((entry) => entry.value.evolutionStage.index >= 5)
-        .toList();
-
-    if (ultimateDigimons.isEmpty) {
-      return Center(
-        child: Text(
-          '究極体デジモンがいません',
-          style: const TextStyle(
-            color: Color(0xFF9CB68C),
-            fontSize: 16,
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A2318),
-        border: Border.all(color: const Color(0xFF4A5A48), width: 4),
-        borderRadius: BorderRadius.circular(15),
-      ),
       child: Column(
         children: [
+          // タイトルバー
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -539,7 +492,7 @@ class _JogressScreenState extends State<JogressScreen>
             ),
             child: const Center(
               child: Text(
-                'ULTIMATE DIGIMON',
+                'ITEM LIST',
                 style: TextStyle(
                   color: Color(0xFF9CB68C),
                   fontSize: 14,
@@ -549,19 +502,19 @@ class _JogressScreenState extends State<JogressScreen>
               ),
             ),
           ),
+          
+          // アイテムリスト（スクロール可能）
           Expanded(
             child: Container(
               color: const Color(0xFF9CB68C),
               child: ListView.builder(
                 padding: const EdgeInsets.all(15),
-                itemCount: ultimateDigimons.length,
-                itemBuilder: (context, listIndex) {
-                  final entry = ultimateDigimons[listIndex];
-                  final index = entry.key;
-                  final digimon = entry.value;
-                  final isSelected = index == _selectedIndex1 || index == _selectedIndex2;
-
-                  return _buildDigimonCard(digimon, index, isSelected);
+                itemCount: ShopItem.allItems.length,
+                itemBuilder: (context, index) {
+                  final item = ShopItem.allItems[index];
+                  final canPurchase = _shopManager.canPurchase(item);
+                  
+                  return _buildShopItemCard(item, canPurchase);
                 },
               ),
             ),
@@ -571,104 +524,250 @@ class _JogressScreenState extends State<JogressScreen>
     );
   }
 
-  Widget _buildDigimonCard(Digimon digimon, int index, bool isSelected) {
-    return AnimatedBuilder(
-      animation: _glowAnimation,
-      builder: (context, child) {
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A2318),
-            border: Border.all(
-              color: isSelected
-                  ? Colors.deepPurple
-                  : const Color(0xFF4A5A48),
-              width: isSelected ? 4 : 3,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.deepPurple.withOpacity(_glowAnimation.value * 0.8),
-                      blurRadius: 15,
-                      spreadRadius: 3,
+  /// ショップアイテムカード
+  Widget _buildShopItemCard(ShopItem item, bool canPurchase) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A2318),
+        border: Border.all(
+          color: canPurchase ? const Color(0xFF4A5A48) : Colors.grey,
+          width: 3,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: canPurchase
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: canPurchase ? () => _purchaseItem(item) : null,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Row(
+              children: [
+                // アイコン
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: canPurchase
+                        ? const Color(0xFF2C3E2E)
+                        : Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: canPurchase ? Colors.amber : Colors.grey,
+                      width: 2,
                     ),
-                  ]
-                : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => _selectDigimon(index),
-              borderRadius: BorderRadius.circular(10),
-              child: Padding(
-                padding: const EdgeInsets.all(15),
-                child: Row(
-                  children: [
-                    // デジモンアイコン
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Color(digimon.evolutionStage.colorValue),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isSelected ? Colors.deepPurple : Colors.white,
-                          width: isSelected ? 3 : 2,
-                        ),
+                  ),
+                  child: Center(
+                    child: Text(
+                      item.icon,
+                      style: TextStyle(
+                        fontSize: 32,
+                        color: canPurchase ? null : Colors.grey,
                       ),
                     ),
-                    const SizedBox(width: 15),
-                    // デジモン情報
-                    Expanded(
+                  ),
+                ),
+                
+                const SizedBox(width: 15),
+                
+                // アイテム情報
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.name,
+                        style: TextStyle(
+                          color: canPurchase
+                              ? const Color(0xFF9CB68C)
+                              : Colors.grey,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.description,
+                        style: TextStyle(
+                          color: canPurchase
+                              ? const Color(0xFF88A878)
+                              : Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(width: 10),
+                
+                // 価格ボタン
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: canPurchase
+                        ? Colors.amber.withOpacity(0.2)
+                        : Colors.grey.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: canPurchase ? Colors.amber : Colors.grey,
+                      width: 2,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        '💰',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        '${item.price}',
+                        style: TextStyle(
+                          color: canPurchase ? Colors.amber : Colors.grey,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 購入成功時のオーバーレイエフェクト
+class _PurchaseSuccessOverlay extends StatefulWidget {
+  final ShopItem item;
+
+  const _PurchaseSuccessOverlay({required this.item});
+
+  @override
+  State<_PurchaseSuccessOverlay> createState() =>
+      _PurchaseSuccessOverlayState();
+}
+
+class _PurchaseSuccessOverlayState extends State<_PurchaseSuccessOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: 1.2)
+            .chain(CurveTween(curve: Curves.elasticOut)),
+        weight: 60,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.2, end: 1.0),
+        weight: 40,
+      ),
+    ]).animate(_controller);
+
+    _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.7, 1.0, curve: Curves.easeOut),
+      ),
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Positioned.fill(
+          child: IgnorePointer(
+            child: Container(
+              color: Colors.black.withOpacity(0.3 * _fadeAnimation.value),
+              child: Center(
+                child: Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: Opacity(
+                    opacity: _fadeAnimation.value,
+                    child: Container(
+                      padding: const EdgeInsets.all(30),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A2318),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.green, width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(0.5),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            digimon.name,
+                            widget.item.icon,
+                            style: const TextStyle(fontSize: 64),
+                          ),
+                          const SizedBox(height: 15),
+                          const Text(
+                            '購入成功！',
                             style: TextStyle(
-                              color: isSelected
-                                  ? Colors.deepPurple
-                                  : const Color(0xFF9CB68C),
-                              fontSize: 16,
+                              color: Colors.green,
+                              fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 10),
                           Text(
-                            'Lv.${digimon.level} ${digimon.evolutionStage.displayName}',
+                            widget.item.name,
                             style: const TextStyle(
-                              color: Color(0xFF88A878),
-                              fontSize: 12,
+                              color: Color(0xFF9CB68C),
+                              fontSize: 18,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    // 選択マーク
-                    if (isSelected)
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(
-                          color: Colors.deepPurple,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          index == _selectedIndex1 ? '1' : '2',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -676,258 +775,5 @@ class _JogressScreenState extends State<JogressScreen>
         );
       },
     );
-  }
-
-  Widget _buildJogressButton() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 40),
-      child: SizedBox(
-        width: double.infinity,
-        height: 60,
-        child: ElevatedButton(
-          onPressed: _executeJogress,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.deepPurple.withOpacity(0.3),
-            foregroundColor: Colors.deepPurple,
-            side: const BorderSide(color: Colors.deepPurple, width: 3),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            elevation: 5,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                '🔀',
-                style: TextStyle(fontSize: 24),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                'ジョグレス進化！',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildJogressAnimation() {
-    return Stack(
-      children: [
-        // 背景（暗転）
-        Container(
-          color: Colors.black,
-        ),
-        
-        // デジモン1（左）
-        if (_selectedIndex1 != null)
-          AnimatedBuilder(
-            animation: Listenable.merge([_rotateAnimation, _mergeAnimation]),
-            builder: (context, child) {
-              final digimon = widget.digimonManager.digimons[_selectedIndex1!];
-              final progress = _mergeAnimation.value;
-              final centerX = MediaQuery.of(context).size.width / 2;
-              final startX = centerX - 100;
-              final currentX = startX + (centerX - startX) * progress;
-              
-              return Positioned(
-                left: currentX - 75,
-                top: MediaQuery.of(context).size.height * 0.4 - 75,
-                child: Transform.rotate(
-                  angle: _rotateAnimation.value,
-                  child: Opacity(
-                    opacity: 1 - progress * 0.5,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Color(digimon.evolutionStage.colorValue),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(digimon.evolutionStage.colorValue).withOpacity(0.8),
-                            blurRadius: 30,
-                            spreadRadius: 10,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        
-        // デジモン2（右）
-        if (_selectedIndex2 != null)
-          AnimatedBuilder(
-            animation: Listenable.merge([_rotateAnimation, _mergeAnimation]),
-            builder: (context, child) {
-              final digimon = widget.digimonManager.digimons[_selectedIndex2!];
-              final progress = _mergeAnimation.value;
-              final centerX = MediaQuery.of(context).size.width / 2;
-              final startX = centerX + 100;
-              final currentX = startX - (startX - centerX) * progress;
-              
-              return Positioned(
-                left: currentX - 75,
-                top: MediaQuery.of(context).size.height * 0.4 - 75,
-                child: Transform.rotate(
-                  angle: -_rotateAnimation.value,
-                  child: Opacity(
-                    opacity: 1 - progress * 0.5,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Color(digimon.evolutionStage.colorValue),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(digimon.evolutionStage.colorValue).withOpacity(0.8),
-                            blurRadius: 30,
-                            spreadRadius: 10,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        
-        // 爆発エフェクト
-        AnimatedBuilder(
-          animation: _explosionAnimation,
-          builder: (context, child) {
-            if (_explosionAnimation.value == 0) return const SizedBox.shrink();
-            
-            return Positioned.fill(
-              child: CustomPaint(
-                painter: _ExplosionPainter(progress: _explosionAnimation.value),
-              ),
-            );
-          },
-        ),
-        
-        // 結果デジモン
-        if (_combination != null)
-          AnimatedBuilder(
-            animation: _explosionAnimation,
-            builder: (context, child) {
-              final progress = _explosionAnimation.value;
-              if (progress < 0.5) return const SizedBox.shrink();
-              
-              final appearProgress = (progress - 0.5) * 2;
-              
-              return Positioned.fill(
-                child: Center(
-                  child: Transform.scale(
-                    scale: appearProgress,
-                    child: Opacity(
-                      opacity: appearProgress,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 200,
-                            height: 200,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFD700),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.yellow, width: 5),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.yellow.withOpacity(0.8),
-                                  blurRadius: 50,
-                                  spreadRadius: 20,
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Text('⭐', style: TextStyle(fontSize: 80)),
-                            ),
-                          ),
-                          const SizedBox(height: 30),
-                          Text(
-                            _combination!.resultName,
-                            style: const TextStyle(
-                              color: Colors.yellow,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-      ],
-    );
-  }
-}
-
-class _ExplosionPainter extends CustomPainter {
-  final double progress;
-
-  _ExplosionPainter({required this.progress});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-    
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    
-    // 放射状の光線
-    for (int i = 0; i < 16; i++) {
-      final angle = (i * math.pi / 8) + (progress * math.pi / 4);
-      final length = progress * 300;
-      final opacity = (1 - progress).clamp(0.0, 1.0);
-      
-      paint.color = Colors.yellow.withOpacity(opacity);
-      
-      final startX = centerX;
-      final startY = centerY;
-      final endX = centerX + math.cos(angle) * length;
-      final endY = centerY + math.sin(angle) * length;
-      
-      canvas.drawLine(
-        Offset(startX, startY),
-        Offset(endX, endY),
-        paint..strokeWidth = 5,
-      );
-    }
-    
-    // 中心の光球
-    final glowPaint = Paint()
-      ..color = Colors.white.withOpacity((1 - progress).clamp(0.0, 1.0))
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 30 * progress);
-    
-    canvas.drawCircle(
-      Offset(centerX, centerY),
-      100 * progress,
-      glowPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _ExplosionPainter oldDelegate) {
-    return oldDelegate.progress != progress;
   }
 }

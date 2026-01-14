@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum EvolutionStage {
   baby1,      // 幼年期Ⅰ
   baby2,      // 幼年期Ⅱ
@@ -86,4 +88,14 @@ extension EvolutionStageExtension on EvolutionStage {
         return null; // 超究極体は最終形態
     }
   }
+
+// 追加メソッド
+  Color getColor() {
+    return Color(colorValue);
+  }
+  
+  String getDisplayName() {
+    return displayName;
+  }
+  
 }

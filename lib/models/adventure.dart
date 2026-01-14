@@ -2,13 +2,20 @@ class Adventure {
   int distance;           // 移動距離
   int coinsCollected;     // 収集したコイン数
   int enemiesDefeated;    // 倒した敵の数
+  double explored;        // 追加: 探索進捗率 (0.0 〜 1.0)
   DateTime lastCoinTime;  // 最後にコインを拾った時間
   DateTime lastEnemyTime; // 最後に敵と遭遇した時間
+
+  int get defeatedEnemies => enemiesDefeated;
+  
+  // explored (0.0~1.0) を 0~100% の整数に変換して返す
+  int get explorationLevel => (explored * 100).toInt(); 
 
   Adventure({
     this.distance = 0,
     this.coinsCollected = 0,
     this.enemiesDefeated = 0,
+    this.explored = 0.0, // 初期値を追加
     DateTime? lastCoinTime,
     DateTime? lastEnemyTime,
   })  : lastCoinTime = lastCoinTime ?? DateTime.now(),
@@ -33,7 +40,16 @@ class Adventure {
     }
     
     // 距離を更新（1分で10進む）
-    distance += minutesSinceCoin + minutesSinceEnemy;
+    final timePassed = minutesSinceCoin + minutesSinceEnemy; // 簡易的な計算
+    if (timePassed > 0) {
+      distance += timePassed * 10; 
+      
+      // 【任意】距離に応じて探索度も上げる場合の例（10000歩で100%など）
+      // if (explored < 1.0) {
+      //   explored += (timePassed * 10) / 10000;
+      //   if (explored > 1.0) explored = 1.0;
+      // }
+    }
   }
 
   /// コインを回収
@@ -48,6 +64,7 @@ class Adventure {
       'distance': distance,
       'coinsCollected': coinsCollected,
       'enemiesDefeated': enemiesDefeated,
+      'explored': explored, // 追加
       'lastCoinTime': lastCoinTime.toIso8601String(),
       'lastEnemyTime': lastEnemyTime.toIso8601String(),
     };
@@ -58,6 +75,7 @@ class Adventure {
       distance: json['distance'] ?? 0,
       coinsCollected: json['coinsCollected'] ?? 0,
       enemiesDefeated: json['enemiesDefeated'] ?? 0,
+      explored: (json['explored'] ?? 0.0).toDouble(), // 追加
       lastCoinTime: json['lastCoinTime'] != null
           ? DateTime.parse(json['lastCoinTime'])
           : DateTime.now(),

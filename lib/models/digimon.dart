@@ -323,4 +323,10 @@ class Digimon {
     updateByTimePassed();
     checkAndNotify();
   }
+
+  // lib/models/digimon.dart に追加
+
+void pet() {
+  mood = (mood + 10).clamp(0, 100);
+}
 }
