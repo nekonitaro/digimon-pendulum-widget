@@ -7,10 +7,7 @@ import '../services/shop_manager.dart';
 class ShopScreen extends StatefulWidget {
   final DigimonManager digimonManager;
 
-  const ShopScreen({
-    super.key,
-    required this.digimonManager,
-  });
+  const ShopScreen({super.key, required this.digimonManager});
 
   @override
   State<ShopScreen> createState() => _ShopScreenState();
@@ -19,7 +16,7 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   late ShopManager _shopManager;
   bool _isLoading = true;
-  
+
   // アニメーションコントローラー
   late AnimationController _coinController;
   late Animation<double> _coinAnimation;
@@ -28,13 +25,13 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initializeShop();
-    
+
     // コインアニメーション（キラキラ）
     _coinController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat(reverse: true);
-    
+
     _coinAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _coinController, curve: Curves.easeInOut),
     );
@@ -70,26 +67,20 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
     if (result.success) {
       // 成功時の演出
       _showPurchaseSuccessAnimation(item);
-      
+
       // 効果音（システム音）
       SystemSound.play(SystemSoundType.click);
-      
+
       // 成功メッセージ
-      _showSnackBar(
-        '${item.name} を購入しました！',
-        Colors.green,
-      );
-      
+      _showSnackBar('${item.name} を購入しました！', Colors.green);
+
       setState(() {});
     } else {
       // 失敗時の振動
       HapticFeedback.heavyImpact();
-      
+
       // エラーメッセージ
-      _showSnackBar(
-        result.message,
-        Colors.red,
-      );
+      _showSnackBar(result.message, Colors.red);
     }
   }
 
@@ -104,10 +95,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         ),
         title: Row(
           children: [
-            Text(
-              item.icon,
-              style: const TextStyle(fontSize: 32),
-            ),
+            Icon(item.icon, size: 32, color: Colors.white),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -126,10 +114,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
           children: [
             Text(
               item.description,
-              style: const TextStyle(
-                color: Color(0xFF9CB68C),
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: Color(0xFF9CB68C), fontSize: 14),
             ),
             const SizedBox(height: 20),
             Container(
@@ -142,10 +127,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    '💰',
-                    style: TextStyle(fontSize: 24),
-                  ),
+                  const Text('💰', style: TextStyle(fontSize: 24)),
                   const SizedBox(width: 10),
                   Text(
                     '${item.price} コイン',
@@ -161,20 +143,14 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
             const SizedBox(height: 15),
             Text(
               '購入しますか？',
-              style: const TextStyle(
-                color: Color(0xFF9CB68C),
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Color(0xFF9CB68C), fontSize: 12),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'キャンセル',
-              style: TextStyle(color: Colors.grey),
-            ),
+            child: const Text('キャンセル', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -196,9 +172,9 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
     final overlayEntry = OverlayEntry(
       builder: (context) => _PurchaseSuccessOverlay(item: item),
     );
-    
+
     overlay.insert(overlayEntry);
-    
+
     // 2秒後に削除
     Future.delayed(const Duration(seconds: 2), () {
       overlayEntry.remove();
@@ -218,9 +194,11 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   }
 
   void _showCoinBreakdown() {
-    final totalCoins = widget.digimonManager.digimons
-        .fold<int>(0, (sum, d) => sum + d.coins);
-    
+    final totalCoins = widget.digimonManager.digimons.fold<int>(
+      0,
+      (sum, d) => sum + d.coins,
+    );
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -245,32 +223,34 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ...widget.digimonManager.digimons.map((d) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      d.name,
-                      style: const TextStyle(
-                        color: Color(0xFF9CB68C),
-                        fontSize: 14,
+            ...widget.digimonManager.digimons.map(
+              (d) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        d.name,
+                        style: const TextStyle(
+                          color: Color(0xFF9CB68C),
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  Text(
-                    '${d.coins}',
-                    style: const TextStyle(
-                      color: Colors.amber,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                    Text(
+                      '${d.coins}',
+                      style: const TextStyle(
+                        color: Colors.amber,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            )),
+            ),
             const Divider(color: Color(0xFF4A5A48), thickness: 2),
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -322,15 +302,15 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
           foregroundColor: Colors.white,
         ),
         body: const Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFF9CB68C),
-          ),
+          child: CircularProgressIndicator(color: Color(0xFF9CB68C)),
         ),
       );
     }
 
-    final totalCoins = widget.digimonManager.digimons
-        .fold<int>(0, (sum, d) => sum + d.coins);
+    final totalCoins = widget.digimonManager.digimons.fold<int>(
+      0,
+      (sum, d) => sum + d.coins,
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFF2C3E2E),
@@ -351,20 +331,17 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         child: Column(
           children: [
             const SizedBox(height: 10),
-            
+
             // コイン表示エリア
             _buildCoinDisplay(totalCoins),
-            
+
             const SizedBox(height: 15),
-            
+
             // ジョグレスストーン所持数
-            if (_shopManager.jogressItemCount > 0)
-              _buildJogressStoneDisplay(),
-            
+            if (_shopManager.jogressItemCount > 0) _buildJogressStoneDisplay(),
+
             // ショップアイテムリスト
-            Expanded(
-              child: _buildShopItemList(),
-            ),
+            Expanded(child: _buildShopItemList()),
           ],
         ),
       ),
@@ -396,20 +373,14 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  '💰',
-                  style: TextStyle(fontSize: 40),
-                ),
+                const Text('💰', style: TextStyle(fontSize: 40)),
                 const SizedBox(width: 15),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       '所持コイン',
-                      style: TextStyle(
-                        color: Color(0xFF9CB68C),
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Color(0xFF9CB68C), fontSize: 14),
                     ),
                     Text(
                       '$totalCoins',
@@ -443,10 +414,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            '💎',
-            style: TextStyle(fontSize: 24),
-          ),
+          const Text('💎', style: TextStyle(fontSize: 24)),
           const SizedBox(width: 10),
           Text(
             'ジョグレスストーン × ${_shopManager.jogressItemCount}',
@@ -502,18 +470,18 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
               ),
             ),
           ),
-          
+
           // アイテムリスト（スクロール可能）
           Expanded(
             child: Container(
               color: const Color(0xFF9CB68C),
               child: ListView.builder(
                 padding: const EdgeInsets.all(15),
-                itemCount: ShopItem.allItems.length,
+                itemCount: ShopCatalog.all.length,
                 itemBuilder: (context, index) {
-                  final item = ShopItem.allItems[index];
+                  final item = ShopCatalog.all[index];
                   final canPurchase = _shopManager.canPurchase(item);
-                  
+
                   return _buildShopItemCard(item, canPurchase);
                 },
               ),
@@ -569,18 +537,12 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   child: Center(
-                    child: Text(
-                      item.icon,
-                      style: TextStyle(
-                        fontSize: 32,
-                        color: canPurchase ? null : Colors.grey,
-                      ),
-                    ),
+                    child: Icon(item.icon, size: 64, color: Colors.white),
                   ),
                 ),
-                
+
                 const SizedBox(width: 15),
-                
+
                 // アイテム情報
                 Expanded(
                   child: Column(
@@ -611,9 +573,9 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(width: 10),
-                
+
                 // 価格ボタン
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -633,10 +595,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        '💰',
-                        style: TextStyle(fontSize: 16),
-                      ),
+                      const Text('💰', style: TextStyle(fontSize: 16)),
                       const SizedBox(width: 5),
                       Text(
                         '${item.price}',
@@ -686,14 +645,13 @@ class _PurchaseSuccessOverlayState extends State<_PurchaseSuccessOverlay>
 
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 0.0, end: 1.2)
-            .chain(CurveTween(curve: Curves.elasticOut)),
+        tween: Tween(
+          begin: 0.0,
+          end: 1.2,
+        ).chain(CurveTween(curve: Curves.elasticOut)),
         weight: 60,
       ),
-      TweenSequenceItem(
-        tween: Tween(begin: 1.2, end: 1.0),
-        weight: 40,
-      ),
+      TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 40),
     ]).animate(_controller);
 
     _fadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
@@ -743,10 +701,7 @@ class _PurchaseSuccessOverlayState extends State<_PurchaseSuccessOverlay>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            widget.item.icon,
-                            style: const TextStyle(fontSize: 64),
-                          ),
+                          Icon(widget.item.icon, size: 32, color: Colors.white),
                           const SizedBox(height: 15),
                           const Text(
                             '購入成功！',

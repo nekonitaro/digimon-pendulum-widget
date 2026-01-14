@@ -425,7 +425,7 @@ class _JogressScreenState extends State<JogressScreen>
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: digimon.Color(evolutionStage.colorValue),
+            color: Color(digimon.evolutionStage.colorValue),
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 2),
           ),
@@ -593,7 +593,7 @@ class _JogressScreenState extends State<JogressScreen>
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: digimon.Color(evolutionStage.colorValue),
+                        color: Color(digimon.evolutionStage.colorValue),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: isSelected ? Colors.deepPurple : Colors.white,
@@ -721,7 +721,7 @@ class _JogressScreenState extends State<JogressScreen>
                       width: 150,
                       height: 150,
                       decoration: BoxDecoration(
-                        color: digimon.Color(evolutionStage.colorValue),
+                        color: Color(digimon.evolutionStage.colorValue),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 3),
                         boxShadow: [
@@ -760,7 +760,7 @@ class _JogressScreenState extends State<JogressScreen>
                       width: 150,
                       height: 150,
                       decoration: BoxDecoration(
-                        color: digimon.Color(evolutionStage.colorValue),
+                        color: Color(digimon.evolutionStage.colorValue),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 3),
                         boxShadow: [
