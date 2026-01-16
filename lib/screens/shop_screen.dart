@@ -194,125 +194,121 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   }
 
   void _showCoinBreakdown() {
-    final totalCoins = widget.digimonManager.digimons.fold<int>(
-      0,
-      (sum, d) => sum + d.coins,
-    );
+  // ✅ 改善: DigimonManager の getter を使用
+  final totalCoins = widget.digimonManager.totalCoins;
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A2318),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-          side: const BorderSide(color: Color(0xFF4A5A48), width: 3),
-        ),
-        title: const Row(
-          children: [
-            Text('💰', style: TextStyle(fontSize: 28)),
-            SizedBox(width: 10),
-            Text(
-              'コイン内訳',
-              style: TextStyle(
-                color: Color(0xFF9CB68C),
-                fontWeight: FontWeight.bold,
-              ),
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: const Color(0xFF1A2318),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: const BorderSide(color: Color(0xFF4A5A48), width: 3),
+      ),
+      title: const Row(
+        children: [
+          Text('💰', style: TextStyle(fontSize: 28)),
+          SizedBox(width: 10),
+          Text(
+            'コイン内訳',
+            style: TextStyle(
+              color: Color(0xFF9CB68C),
+              fontWeight: FontWeight.bold,
             ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ...widget.digimonManager.digimons.map(
-              (d) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        d.name,
-                        style: const TextStyle(
-                          color: Color(0xFF9CB68C),
-                          fontSize: 14,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Text(
-                      '${d.coins}',
-                      style: const TextStyle(
-                        color: Colors.amber,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const Divider(color: Color(0xFF4A5A48), thickness: 2),
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ...widget.digimonManager.digimons.map(
+            (d) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    '合計',
-                    style: TextStyle(
-                      color: Color(0xFF9CB68C),
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      d.name,
+                      style: const TextStyle(
+                        color: Color(0xFF9CB68C),
+                        fontSize: 14,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Text(
-                    '$totalCoins',
+                    '${d.coins}',
                     style: const TextStyle(
                       color: Colors.amber,
-                      fontSize: 20,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              '閉じる',
-              style: TextStyle(color: Color(0xFF9CB68C)),
+          ),
+          const Divider(color: Color(0xFF4A5A48), thickness: 2),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '合計',
+                  style: TextStyle(
+                    color: Color(0xFF9CB68C),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '$totalCoins',
+                  style: const TextStyle(
+                    color: Colors.amber,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text(
+            '閉じる',
+            style: TextStyle(color: Color(0xFF9CB68C)),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+ @override
+Widget build(BuildContext context) {
+  if (_isLoading) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF2C3E2E),
+      appBar: AppBar(
+        title: const Text('SHOP'),
+        backgroundColor: const Color(0xFF2C3E2E),
+        foregroundColor: Colors.white,
+      ),
+      body: const Center(
+        child: CircularProgressIndicator(color: Color(0xFF9CB68C)),
+      ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF2C3E2E),
-        appBar: AppBar(
-          title: const Text('SHOP'),
-          backgroundColor: const Color(0xFF2C3E2E),
-          foregroundColor: Colors.white,
-        ),
-        body: const Center(
-          child: CircularProgressIndicator(color: Color(0xFF9CB68C)),
-        ),
-      );
-    }
+  // ✅ 改善: DigimonManager の getter を使用
+  final totalCoins = widget.digimonManager.totalCoins;
 
-    final totalCoins = widget.digimonManager.digimons.fold<int>(
-      0,
-      (sum, d) => sum + d.coins,
-    );
-
-    return Scaffold(
+  return Scaffold(
       backgroundColor: const Color(0xFF2C3E2E),
       appBar: AppBar(
         title: const Text('SHOP'),
@@ -537,7 +533,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   child: Center(
-                    child: Icon(item.icon, size: 64, color: Colors.white),
+                    child: Icon(item.icon, size: 32, color: Colors.white),
                   ),
                 ),
 

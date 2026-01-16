@@ -8,34 +8,32 @@ import 'services/widget_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await WidgetService.registerCallbacks();
-  
+
   final initialUri = await HomeWidget.initiallyLaunchedFromHomeWidget();
-  
+
   // DigimonManagerを初期化
   final digimonManager = DigimonManager();
   await digimonManager.initialize();
-  
-  runApp(MyApp(
-    digimonManager: digimonManager,
-    initialUri: initialUri,
-  ));
+
+  runApp(MyApp(digimonManager: digimonManager, initialUri: initialUri));
 }
 
 class MyApp extends StatelessWidget {
-    final DigimonManager digimonManager; // 追加
+  final DigimonManager digimonManager; // 追加
   final Uri? initialUri;
-  
-   const MyApp({
-    super.key, 
-    required this.digimonManager,
-    this.initialUri
-  });
+
+  const MyApp({super.key, required this.digimonManager, this.initialUri});
   @override
   Widget build(BuildContext context) {
+    // ✅ 推奨
     return MaterialApp(
-      home: HomeScreen(
-        digimonManager: digimonManager,
+      title: 'デジモン育成',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
       ),
+      home: HomeScreen(digimonManager: digimonManager),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

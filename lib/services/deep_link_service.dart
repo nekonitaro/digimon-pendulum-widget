@@ -1,11 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 // import 'package:flutter/foundation.dart';
 
 class DeepLinkService {
   static const platform = MethodChannel('digimon.deeplink');
   
-  static void initialize(Function(Uri?) callback) {
-    platform.setMethodCallHandler((MethodCall call) async {
+// ✅ 推奨（エラーハンドリング追加）
+static void initialize(Function(Uri?) callback) {
+  platform.setMethodCallHandler((MethodCall call) async {
+    try {
       if (call.method == 'onLinkReceived') {
         final String? link = call.arguments as String?;
         if (link != null) {
@@ -14,8 +17,14 @@ class DeepLinkService {
           callback(null);
         }
       }
-    });
-  }
+    } catch (e) {
+      if (kDebugMode) {
+        print('DeepLink error: $e');
+      }
+      callback(null);
+    }
+  });
+}
  static Future<String?> getInitialLink() async {
     try {
       final String? link = await platform.invokeMethod('getInitialLink');

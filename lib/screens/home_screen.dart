@@ -342,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Color(digimon.evolutionStage.colorValue).withValues(alpha:0.3),
+              color: Color(digimon.evolutionStage.colorValue).withValues(alpha: 0.3),
               border: Border.all(
                 color: Color(digimon.evolutionStage.colorValue),
                 width: 2,
@@ -382,7 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -583,8 +583,8 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isEnabled
-                    ? color.withValues(alpha:0.3)
-                    : Colors.grey.withValues(alpha:0.2),
+                    ? color.withValues(alpha: 0.3)
+                    : Colors.grey.withValues(alpha: 0.2),
                 border: Border.all(
                   color: isEnabled ? color : Colors.grey,
                   width: 3,
@@ -592,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 boxShadow: isEnabled
                     ? [
                         BoxShadow(
-                          color: color.withValues(alpha:0.5),
+                          color: color.withValues(alpha: 0.5),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),

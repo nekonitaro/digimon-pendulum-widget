@@ -9,10 +9,7 @@ import '../services/digimon_manager.dart';
 class JogressScreen extends StatefulWidget {
   final DigimonManager digimonManager;
 
-  const JogressScreen({
-    super.key,
-    required this.digimonManager,
-  });
+  const JogressScreen({super.key, required this.digimonManager});
 
   @override
   State<JogressScreen> createState() => _JogressScreenState();
@@ -24,7 +21,7 @@ class _JogressScreenState extends State<JogressScreen>
   int? _selectedIndex2;
   JogressCombination? _combination;
   bool _isJogressing = false;
-  
+
   late AnimationController _glowController;
   late AnimationController _rotateController;
   late AnimationController _mergeController;
@@ -37,39 +34,39 @@ class _JogressScreenState extends State<JogressScreen>
   @override
   void initState() {
     super.initState();
-    
+
     _glowController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     )..repeat(reverse: true);
-    
+
     _glowAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
-    
+
     _rotateController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-    
+
     _rotateAnimation = Tween<double>(begin: 0, end: math.pi * 4).animate(
       CurvedAnimation(parent: _rotateController, curve: Curves.easeInOut),
     );
-    
+
     _mergeController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-    
+
     _mergeAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _mergeController, curve: Curves.easeInOut),
     );
-    
+
     _explosionController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    
+
     _explosionAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _explosionController, curve: Curves.easeOut),
     );
@@ -104,17 +101,19 @@ class _JogressScreenState extends State<JogressScreen>
 
   void _checkCombination() {
     if (_selectedIndex1 == null || _selectedIndex2 == null) return;
-    
+
     final d1 = widget.digimonManager.digimons[_selectedIndex1!];
     final d2 = widget.digimonManager.digimons[_selectedIndex2!];
-    
+
     setState(() {
       _combination = d1.getJogressCombination(d2);
     });
   }
 
   Future<void> _executeJogress() async {
-    if (_selectedIndex1 == null || _selectedIndex2 == null || _combination == null) {
+    if (_selectedIndex1 == null ||
+        _selectedIndex2 == null ||
+        _combination == null) {
       return;
     }
 
@@ -138,19 +137,16 @@ class _JogressScreenState extends State<JogressScreen>
     if (success) {
       HapticFeedback.heavyImpact();
       SystemSound.play(SystemSoundType.click);
-      
-      _showSnackBar(
-        'ジョグレス成功！ ${_combination!.name} が誕生！',
-        Colors.green,
-      );
-      
+
+      _showSnackBar('ジョグレス成功！ ${_combination!.name} が誕生！', Colors.green);
+
       await Future.delayed(const Duration(milliseconds: 500));
       if (!mounted) return;
       Navigator.pop(context, true);
     } else {
       HapticFeedback.heavyImpact();
       _showSnackBar('ジョグレスに失敗しました', Colors.red);
-      
+
       setState(() {
         _isJogressing = false;
         _selectedIndex1 = null;
@@ -164,16 +160,16 @@ class _JogressScreenState extends State<JogressScreen>
     _rotateController.forward();
     await Future.delayed(const Duration(milliseconds: 500));
     HapticFeedback.mediumImpact();
-    
+
     await Future.delayed(const Duration(milliseconds: 1000));
     _mergeController.forward();
     await Future.delayed(const Duration(milliseconds: 500));
     HapticFeedback.heavyImpact();
-    
+
     await Future.delayed(const Duration(milliseconds: 1000));
     _explosionController.forward();
     SystemSound.play(SystemSoundType.click);
-    
+
     await Future.delayed(const Duration(milliseconds: 1000));
   }
 
@@ -257,20 +253,14 @@ class _JogressScreenState extends State<JogressScreen>
             const SizedBox(height: 15),
             const Text(
               '※合体元のデジモンは消滅します',
-              style: TextStyle(
-                color: Colors.red,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: Colors.red, fontSize: 12),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'キャンセル',
-              style: TextStyle(color: Colors.grey),
-            ),
+            child: const Text('キャンセル', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -319,7 +309,7 @@ class _JogressScreenState extends State<JogressScreen>
     return Column(
       children: [
         const SizedBox(height: 15),
-        
+
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 20),
           padding: const EdgeInsets.all(15),
@@ -330,30 +320,24 @@ class _JogressScreenState extends State<JogressScreen>
           ),
           child: const Text(
             '究極体デジモンを2体選択してください',
-            style: TextStyle(
-              color: Color(0xFF9CB68C),
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Color(0xFF9CB68C), fontSize: 14),
             textAlign: TextAlign.center,
           ),
         ),
-        
+
         const SizedBox(height: 15),
-        
+
         if (_selectedIndex1 != null || _selectedIndex2 != null)
           _buildSelectionPreview(),
-        
+
         const SizedBox(height: 15),
-        
-        Expanded(
-          child: _buildDigimonList(),
-        ),
-        
+
+        Expanded(child: _buildDigimonList()),
+
         const SizedBox(height: 15),
-        
-        if (_combination != null)
-          _buildJogressButton(),
-        
+
+        if (_combination != null) _buildJogressButton(),
+
         const SizedBox(height: 15),
       ],
     );
@@ -379,8 +363,10 @@ class _JogressScreenState extends State<JogressScreen>
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           if (_selectedIndex1 != null)
-            _buildPreviewDigimon(widget.digimonManager.digimons[_selectedIndex1!]),
-          
+            _buildPreviewDigimon(
+              widget.digimonManager.digimons[_selectedIndex1!],
+            ),
+
           if (_selectedIndex1 != null && _selectedIndex2 != null)
             AnimatedBuilder(
               animation: _glowAnimation,
@@ -394,10 +380,12 @@ class _JogressScreenState extends State<JogressScreen>
                 );
               },
             ),
-          
+
           if (_selectedIndex2 != null)
-            _buildPreviewDigimon(widget.digimonManager.digimons[_selectedIndex2!]),
-          
+            _buildPreviewDigimon(
+              widget.digimonManager.digimons[_selectedIndex2!],
+            ),
+
           if (_combination != null) ...[
             AnimatedBuilder(
               animation: _glowAnimation,
@@ -433,10 +421,7 @@ class _JogressScreenState extends State<JogressScreen>
         const SizedBox(height: 5),
         Text(
           digimon.name,
-          style: const TextStyle(
-            color: Color(0xFF9CB68C),
-            fontSize: 10,
-          ),
+          style: const TextStyle(color: Color(0xFF9CB68C), fontSize: 10),
         ),
       ],
     );
@@ -460,9 +445,7 @@ class _JogressScreenState extends State<JogressScreen>
               ),
             ],
           ),
-          child: const Center(
-            child: Text('⭐', style: TextStyle(fontSize: 30)),
-          ),
+          child: const Center(child: Text('⭐', style: TextStyle(fontSize: 30))),
         ),
         const SizedBox(height: 5),
         Text(
@@ -478,76 +461,73 @@ class _JogressScreenState extends State<JogressScreen>
   }
 
   Widget _buildDigimonList() {
-    final ultimateDigimons = widget.digimonManager.digimons
-        .asMap()
-        .entries
-        .where((entry) => entry.value.evolutionStage.index >= 5)
-        .toList();
+  // ✅ 改善: DigimonManager のメソッドを使用
+  final ultimateDigimons = widget.digimonManager.getUltimateDigimonsWithIndex();
 
-    if (ultimateDigimons.isEmpty) {
-      return const Center(
-        child: Text(
-          '究極体デジモンがいません',
-          style: TextStyle(
-            color: Color(0xFF9CB68C),
-            fontSize: 16,
-          ),
+  if (ultimateDigimons.isEmpty) {
+    return const Center(
+      child: Text(
+        '究極体デジモンがいません',
+        style: TextStyle(
+          color: Color(0xFF9CB68C),
+          fontSize: 16,
         ),
-      );
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A2318),
-        border: Border.all(color: const Color(0xFF4A5A48), width: 4),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: const BoxDecoration(
-              color: Color(0xFF2C3E2E),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(11),
-                topRight: Radius.circular(11),
-              ),
-            ),
-            child: const Center(
-              child: Text(
-                'ULTIMATE DIGIMON',
-                style: TextStyle(
-                  color: Color(0xFF9CB68C),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Container(
-              color: const Color(0xFF9CB68C),
-              child: ListView.builder(
-                padding: const EdgeInsets.all(15),
-                itemCount: ultimateDigimons.length,
-                itemBuilder: (context, listIndex) {
-                  final entry = ultimateDigimons[listIndex];
-                  final index = entry.key;
-                  final digimon = entry.value;
-                  final isSelected = index == _selectedIndex1 || index == _selectedIndex2;
-
-                  return _buildDigimonCard(digimon, index, isSelected);
-                },
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
+
+ return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 20),
+    decoration: BoxDecoration(
+      color: const Color(0xFF1A2318),
+      border: Border.all(color: const Color(0xFF4A5A48), width: 4),
+      borderRadius: BorderRadius.circular(15),
+    ),
+    child: Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: const BoxDecoration(
+            color: Color(0xFF2C3E2E),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(11),
+              topRight: Radius.circular(11),
+            ),
+          ),
+          child: const Center(
+            child: Text(
+              'ULTIMATE DIGIMON',
+              style: TextStyle(
+                color: Color(0xFF9CB68C),
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            color: const Color(0xFF9CB68C),
+            child: ListView.builder(
+              padding: const EdgeInsets.all(15),
+              itemCount: ultimateDigimons.length,
+              itemBuilder: (context, listIndex) {
+                final entry = ultimateDigimons[listIndex];
+                final index = entry.key;
+                final digimon = entry.value;
+                final isSelected = index == _selectedIndex1 || index == _selectedIndex2;
+
+                return _buildDigimonCard(digimon, index, isSelected);
+              },
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildDigimonCard(Digimon digimon, int index, bool isSelected) {
     return AnimatedBuilder(
@@ -558,16 +538,16 @@ class _JogressScreenState extends State<JogressScreen>
           decoration: BoxDecoration(
             color: const Color(0xFF1A2318),
             border: Border.all(
-              color: isSelected
-                  ? Colors.deepPurple
-                  : const Color(0xFF4A5A48),
+              color: isSelected ? Colors.deepPurple : const Color(0xFF4A5A48),
               width: isSelected ? 4 : 3,
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.deepPurple.withValues(alpha: _glowAnimation.value * 0.8),
+                      color: Colors.deepPurple.withValues(
+                        alpha: _glowAnimation.value * 0.8,
+                      ),
                       blurRadius: 15,
                       spreadRadius: 3,
                     ),
@@ -673,10 +653,7 @@ class _JogressScreenState extends State<JogressScreen>
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '🔀',
-                style: TextStyle(fontSize: 24),
-              ),
+              Text('🔀', style: TextStyle(fontSize: 24)),
               SizedBox(width: 10),
               Text(
                 'ジョグレス進化！',
@@ -693,162 +670,164 @@ class _JogressScreenState extends State<JogressScreen>
     );
   }
 
-  Widget _buildJogressAnimation() {
-    return Stack(
-      children: [
-        Container(
-          color: Colors.black,
-        ),
-        
+Widget _buildJogressAnimation() {
+  return Stack(
+    children: [
+      Container(
+        color: Colors.black,
+      ),
+
         if (_selectedIndex1 != null)
-          AnimatedBuilder(
-            animation: Listenable.merge([_rotateAnimation, _mergeAnimation]),
-            builder: (context, child) {
-              final digimon = widget.digimonManager.digimons[_selectedIndex1!];
-              final progress = _mergeAnimation.value;
-              final centerX = MediaQuery.of(context).size.width / 2;
-              final startX = centerX - 100;
-              final currentX = startX + (centerX - startX) * progress;
-              
-              return Positioned(
-                left: currentX - 75,
-                top: MediaQuery.of(context).size.height * 0.4 - 75,
-                child: Transform.rotate(
-                  angle: _rotateAnimation.value,
-                  child: Opacity(
-                    opacity: 1 - progress * 0.5,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Color(digimon.evolutionStage.colorValue),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: digimon.Color(evolutionStage.colorValue).withValues(alpha: 0.8),
-                            blurRadius: 30,
-                            spreadRadius: 10,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        
-        if (_selectedIndex2 != null)
-          AnimatedBuilder(
-            animation: Listenable.merge([_rotateAnimation, _mergeAnimation]),
-            builder: (context, child) {
-              final digimon = widget.digimonManager.digimons[_selectedIndex2!];
-              final progress = _mergeAnimation.value;
-              final centerX = MediaQuery.of(context).size.width / 2;
-              final startX = centerX + 100;
-              final currentX = startX - (startX - centerX) * progress;
-              
-              return Positioned(
-                left: currentX - 75,
-                top: MediaQuery.of(context).size.height * 0.4 - 75,
-                child: Transform.rotate(
-                  angle: -_rotateAnimation.value,
-                  child: Opacity(
-                    opacity: 1 - progress * 0.5,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Color(digimon.evolutionStage.colorValue),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 3),
-                        boxShadow: [
-                          BoxShadow(
-                            color: digimon.Color(evolutionStage.colorValue).withValues(alpha: 0.8),
-                            blurRadius: 30,
-                            spreadRadius: 10,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        
         AnimatedBuilder(
-          animation: _explosionAnimation,
+          animation: Listenable.merge([_rotateAnimation, _mergeAnimation]),
           builder: (context, child) {
-            if (_explosionAnimation.value == 0) return const SizedBox.shrink();
+            final digimon = widget.digimonManager.digimons[_selectedIndex1!];
+            final progress = _mergeAnimation.value;
+            final centerX = MediaQuery.of(context).size.width / 2;
+            final startX = centerX - 100;
+            final currentX = startX + (centerX - startX) * progress;
             
-            return Positioned.fill(
-              child: CustomPaint(
-                painter: _ExplosionPainter(progress: _explosionAnimation.value),
+            return Positioned(
+              left: currentX - 75,
+              top: MediaQuery.of(context).size.height * 0.4 - 75,
+              child: Transform.rotate(
+                angle: _rotateAnimation.value,
+                child: Opacity(
+                  opacity: 1 - progress * 0.5,
+                  child: Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: Color(digimon.evolutionStage.colorValue),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          // ✅ 修正: digimon.Color() → Color()
+                          color: Color(digimon.evolutionStage.colorValue).withValues(alpha: 0.8),
+                          blurRadius: 30,
+                          spreadRadius: 10,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             );
           },
         ),
-        
-        if (_combination != null)
-          AnimatedBuilder(
-            animation: _explosionAnimation,
-            builder: (context, child) {
-              final progress = _explosionAnimation.value;
-              if (progress < 0.5) return const SizedBox.shrink();
-              
-              final appearProgress = (progress - 0.5) * 2;
-              
-              return Positioned.fill(
-                child: Center(
-                  child: Transform.scale(
-                    scale: appearProgress,
-                    child: Opacity(
-                      opacity: appearProgress,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 200,
-                            height: 200,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFD700),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.yellow, width: 5),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.yellow.withValues(alpha: 0.8),
-                                  blurRadius: 50,
-                                  spreadRadius: 20,
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Text('⭐', style: TextStyle(fontSize: 80)),
-                            ),
-                          ),
-                          const SizedBox(height: 30),
-                          Text(
-                            _combination!.name,
-                            style: const TextStyle(
-                              color: Colors.yellow,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+
+       if (_selectedIndex2 != null)
+        AnimatedBuilder(
+          animation: Listenable.merge([_rotateAnimation, _mergeAnimation]),
+          builder: (context, child) {
+            final digimon = widget.digimonManager.digimons[_selectedIndex2!];
+            final progress = _mergeAnimation.value;
+            final centerX = MediaQuery.of(context).size.width / 2;
+            final startX = centerX + 100;
+            final currentX = startX - (startX - centerX) * progress;
+            
+            return Positioned(
+              left: currentX - 75,
+              top: MediaQuery.of(context).size.height * 0.4 - 75,
+              child: Transform.rotate(
+                angle: -_rotateAnimation.value,
+                child: Opacity(
+                  opacity: 1 - progress * 0.5,
+                  child: Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: Color(digimon.evolutionStage.colorValue),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          // ✅ 修正: digimon.Color() → Color()
+                          color: Color(digimon.evolutionStage.colorValue).withValues(alpha: 0.8),
+                          blurRadius: 30,
+                          spreadRadius: 10,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              );
-            },
-          ),
-      ],
-    );
-  }
+              ),
+            );
+          },
+        ),
+
+         // 爆発エフェクト
+      AnimatedBuilder(
+        animation: _explosionAnimation,
+        builder: (context, child) {
+          if (_explosionAnimation.value == 0) return const SizedBox.shrink();
+          
+          return Positioned.fill(
+            child: CustomPaint(
+              painter: _ExplosionPainter(progress: _explosionAnimation.value),
+            ),
+          );
+        },
+      ),
+      if (_combination != null)
+        AnimatedBuilder(
+          animation: _explosionAnimation,
+          builder: (context, child) {
+            final progress = _explosionAnimation.value;
+            if (progress < 0.5) return const SizedBox.shrink();
+            
+            final appearProgress = (progress - 0.5) * 2;
+            
+            return Positioned.fill(
+              child: Center(
+                child: Transform.scale(
+                  scale: appearProgress,
+                  child: Opacity(
+                    opacity: appearProgress,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFD700),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.yellow, width: 5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.yellow.withValues(alpha: 0.8),
+                                blurRadius: 50,
+                                spreadRadius: 20,
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Text('⭐', style: TextStyle(fontSize: 80)),
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        Text(
+                          _combination!.name,
+                          style: const TextStyle(
+                            color: Colors.yellow,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+    ],
+  );
 }
+    }
 
 class _ExplosionPainter extends CustomPainter {
   final double progress;
@@ -859,39 +838,35 @@ class _ExplosionPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final centerX = size.width / 2;
     final centerY = size.height / 2;
-    
+
     final paint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.fill;
-    
+
     for (int i = 0; i < 16; i++) {
       final angle = (i * math.pi / 8) + (progress * math.pi / 4);
       final length = progress * 300;
       final opacity = (1 - progress).clamp(0.0, 1.0);
-      
+
       paint.color = Colors.yellow.withValues(alpha: opacity);
-      
+
       final startX = centerX;
       final startY = centerY;
       final endX = centerX + math.cos(angle) * length;
       final endY = centerY + math.sin(angle) * length;
-      
+
       canvas.drawLine(
         Offset(startX, startY),
         Offset(endX, endY),
         paint..strokeWidth = 5,
       );
     }
-    
+
     final glowPaint = Paint()
       ..color = Colors.white.withValues(alpha: (1 - progress).clamp(0.0, 1.0))
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, 30 * progress);
-    
-    canvas.drawCircle(
-      Offset(centerX, centerY),
-      100 * progress,
-      glowPaint,
-    );
+
+    canvas.drawCircle(Offset(centerX, centerY), 100 * progress, glowPaint);
   }
 
   @override
@@ -899,3 +874,4 @@ class _ExplosionPainter extends CustomPainter {
     return oldDelegate.progress != progress;
   }
 }
+    

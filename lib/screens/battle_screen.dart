@@ -292,7 +292,7 @@ class _BattleScreenState extends State<BattleScreen>
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -477,7 +477,7 @@ class _BattleScreenState extends State<BattleScreen>
             border: Border.all(color: Colors.black, width: 2),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha:0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 5,
                 offset: const Offset(0, 3),
               ),
@@ -533,7 +533,7 @@ class _BattleScreenState extends State<BattleScreen>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: (isCritical ? Colors.red : Colors.yellow).withValues(alpha:0.8),
+                    color: (isCritical ? Colors.red : Colors.yellow).withValues(alpha: 0.8),
                     blurRadius: 15,
                     spreadRadius: glowSpread,
                   ),
@@ -594,7 +594,7 @@ class _BattleScreenState extends State<BattleScreen>
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF2C3E2E).withValues(alpha:0.9),
+          color: const Color(0xFF2C3E2E).withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(color: Colors.red, width: 3),
         ),
@@ -627,7 +627,7 @@ class _BattleScreenState extends State<BattleScreen>
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: const Color(0xFF2C3E2E).withValues(alpha:0.9),
+          color: const Color(0xFF2C3E2E).withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
             color: _battle.playerWon ? Colors.green : Colors.red,
@@ -746,7 +746,7 @@ class _BattleScreenState extends State<BattleScreen>
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: color.withValues(alpha:0.3),
+          backgroundColor: color.withValues(alpha: 0.3),
           foregroundColor: color,
           side: BorderSide(color: color, width: 3),
           shape: RoundedRectangleBorder(
@@ -776,7 +776,7 @@ class _ScrollingBgPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF88A878).withValues(alpha:0.2)
+      ..color = const Color(0xFF88A878).withValues(alpha: 0.2)
       ..style = PaintingStyle.fill;
 
     // スクロールするドットパターン
@@ -796,7 +796,7 @@ class _ScrollingBgPainter extends CustomPainter {
     
     // 地面のライン（複数本でスクロール感）
     final groundPaint = Paint()
-      ..color = const Color(0xFF2C3E2E).withValues(alpha:0.4)
+      ..color = const Color(0xFF2C3E2E).withValues(alpha: 0.4)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
     
