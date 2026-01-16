@@ -445,7 +445,7 @@ class _BattleScreenState extends State<BattleScreen>
   /// デジモンスプライト（簡易版）
   Widget _buildDigimonSprite(Digimon digimon, {required bool isPlayer}) {
     final color = Color(digimon.evolutionStage.colorValue);
-    final size = 60.0;
+    const size = 60.0;
     
     return Column(
       children: [

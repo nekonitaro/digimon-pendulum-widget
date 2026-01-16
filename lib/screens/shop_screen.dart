@@ -141,9 +141,9 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(height: 15),
-            Text(
+            const Text(
               '購入しますか？',
-              style: const TextStyle(color: Color(0xFF9CB68C), fontSize: 12),
+              style: TextStyle(color: Color(0xFF9CB68C), fontSize: 12),
             ),
           ],
         ),
@@ -155,7 +155,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.withOpacity(0.3),
+              backgroundColor: Colors.green.withValues(alpha: 0.3),
               foregroundColor: Colors.green,
               side: const BorderSide(color: Colors.green, width: 2),
             ),
@@ -360,7 +360,7 @@ Widget build(BuildContext context) {
               borderRadius: BorderRadius.circular(15),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.amber.withOpacity(0.3),
+                  color: Colors.amber.withValues(alpha: 0.3),
                   blurRadius: 15,
                   spreadRadius: 2,
                 ),
@@ -435,7 +435,7 @@ Widget build(BuildContext context) {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.5),
+            color: Colors.black.withValues(alpha: 0.5),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -502,7 +502,7 @@ Widget build(BuildContext context) {
         boxShadow: canPurchase
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 5,
                   offset: const Offset(0, 3),
                 ),
@@ -525,7 +525,7 @@ Widget build(BuildContext context) {
                   decoration: BoxDecoration(
                     color: canPurchase
                         ? const Color(0xFF2C3E2E)
-                        : Colors.grey.withOpacity(0.3),
+                        : Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: canPurchase ? Colors.amber : Colors.grey,
@@ -580,8 +580,8 @@ Widget build(BuildContext context) {
                   ),
                   decoration: BoxDecoration(
                     color: canPurchase
-                        ? Colors.amber.withOpacity(0.2)
-                        : Colors.grey.withOpacity(0.2),
+                        ? Colors.amber.withValues(alpha: 0.2)
+                        : Colors.grey.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: canPurchase ? Colors.amber : Colors.grey,
@@ -674,7 +674,7 @@ class _PurchaseSuccessOverlayState extends State<_PurchaseSuccessOverlay>
         return Positioned.fill(
           child: IgnorePointer(
             child: Container(
-              color: Colors.black.withOpacity(0.3 * _fadeAnimation.value),
+              color: Colors.black.withValues(alpha: 0.3 * _fadeAnimation.value),
               child: Center(
                 child: Transform.scale(
                   scale: _scaleAnimation.value,
@@ -688,7 +688,7 @@ class _PurchaseSuccessOverlayState extends State<_PurchaseSuccessOverlay>
                         border: Border.all(color: Colors.green, width: 3),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.green.withOpacity(0.5),
+                            color: Colors.green.withValues(alpha: 0.5),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),

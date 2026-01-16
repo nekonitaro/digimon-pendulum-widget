@@ -148,7 +148,7 @@ class NotificationService {
     await showNotification(
       id: 1,
       title: '💩 うんちが溜まっています！',
-      body: '$digimonNameのうんちが${poopCount}個になりました。掃除してあげましょう！',
+      body: '$digimonNameのうんちが$poopCount個になりました。掃除してあげましょう！',
       type: NotificationType.poop,
     );
   }
@@ -177,11 +177,11 @@ class NotificationService {
   Future<void> notifyAdventureComplete(String digimonName, int coins, int enemies) async {
     String message = '';
     if (coins > 0 && enemies > 0) {
-      message = 'コイン${coins}枚と敵${enemies}体を発見しました！';
+      message = 'コイン$coins枚と敵$enemies体を発見しました！';
     } else if (coins > 0) {
-      message = 'コイン${coins}枚を発見しました！';
+      message = 'コイン$coins枚を発見しました！';
     } else if (enemies > 0) {
-      message = '敵${enemies}体を倒しました！';
+      message = '敵$enemies体を倒しました！';
     }
 
     if (message.isNotEmpty) {
