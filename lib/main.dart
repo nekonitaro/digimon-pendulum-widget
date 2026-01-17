@@ -4,6 +4,7 @@ import 'screens/home_screen.dart';
 import 'services/digimon_manager.dart';
 import 'services/widget_service.dart';
 
+//TEST
 // main関数も修正
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
