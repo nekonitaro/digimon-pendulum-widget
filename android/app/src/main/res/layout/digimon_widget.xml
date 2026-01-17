@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:padding="8dp">
+
+    <!-- メイン画面（タイトルなし） -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#9CB68C"
+        android:padding="16dp">
+
+        <!-- デジモンスプライト（中央） -->
+        <FrameLayout
+            android:id="@+id/digimon_sprite"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_centerInParent="true"
+            android:background="@drawable/digimon_circle">
+            
+            <!-- デジモンの顔（機嫌で変化） -->
+            <TextView
+                android:id="@+id/digimon_face"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="😊"
+                android:textSize="48sp" />
+        </FrameLayout>
+
+        <!-- うんち表示（デジモンの周り） -->
+        <TextView
+            android:id="@+id/poop_1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toStartOf="@id/digimon_sprite"
+            android:layout_alignTop="@id/digimon_sprite"
+            android:layout_marginEnd="8dp"
+            android:text="💩"
+            android:textSize="24sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/poop_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/digimon_sprite"
+            android:layout_alignTop="@id/digimon_sprite"
+            android:layout_marginStart="8dp"
+            android:text="💩"
+            android:textSize="24sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/poop_3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/digimon_sprite"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
+            android:text="💩"
+            android:textSize="24sp"
+            android:visibility="gone" />
+
+        <!-- 冒険コイン表示（右上、0の時は非表示） -->
+        <LinearLayout
+            android:id="@+id/adventure_coins_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:background="@drawable/coin_badge"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="冒険"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💰"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/adventure_coins"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textColor="#FFD700"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 進化可能アイコン（左上） -->
+        <TextView
+            android:id="@+id/evolve_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true"
+            android:padding="8dp"
+            android:text="⚡"
+            android:textSize="32sp"
+            android:visibility="gone" />
+
+    </RelativeLayout>
+</FrameLayout>

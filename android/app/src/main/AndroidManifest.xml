@@ -60,23 +60,15 @@
           android:name="flutterEmbedding"
           android:value="2" />
           
-      <receiver 
-            android:name="com.yourcompany.digimon_pendulum.HomeWidgetProvider"
+        <receiver
+            android:name=".DigimonWidgetProvider"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
-            <meta-data 
+            <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/home_widget" />
-        </receiver>
-        
-        <receiver 
-            android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="es.antonborri.home_widget.action.BACKGROUND" />
-            </intent-filter>
+                android:resource="@xml/digimon_widget_info" />
         </receiver>
         
         <meta-data

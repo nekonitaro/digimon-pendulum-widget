@@ -131,8 +131,8 @@ class _HomeScreenState extends State<HomeScreen> {
   /// 上部ボタンエリア（横スクロール対応）
   Widget _buildTopButtonArea(Digimon digimon) {
     return Container(
-      height: 90,
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      height: 80, // 90 → 80 に変更
+      padding: const EdgeInsets.symmetric(vertical: 5), // 10 → 5 に変更
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -342,7 +342,9 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Color(digimon.evolutionStage.colorValue).withValues(alpha: 0.3),
+              color: Color(
+                digimon.evolutionStage.colorValue,
+              ).withValues(alpha: 0.3),
               border: Border.all(
                 color: Color(digimon.evolutionStage.colorValue),
                 width: 2,
@@ -578,8 +580,8 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: onPressed,
             customBorder: const CircleBorder(),
             child: Container(
-              width: 60,
-              height: 60,
+              width: 55, // 60 → 55 に変更
+              height: 55, // 60 → 55 に変更
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isEnabled
@@ -602,17 +604,18 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Icon(
                 icon,
                 color: isEnabled ? color : Colors.grey,
-                size: 30,
+                size: 26, // 30 → 26 に変更
               ),
             ),
           ),
         ),
-        const SizedBox(height: 5),
+
+        const SizedBox(height: 3), // 5 → 3 に変更
         Text(
           label,
           style: TextStyle(
             color: isEnabled ? const Color(0xFF9CB68C) : Colors.grey,
-            fontSize: 10,
+            fontSize: 9, // 10 → 9 に変更
             fontWeight: FontWeight.bold,
           ),
         ),

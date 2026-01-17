@@ -1,50 +1,68 @@
-// import 'package:flutter/foundation.dart';
+// ========================================
+// クラス: WidgetService
+// メソッド: updateWidget() の修正
+// ========================================
+
+// ✅ 修正後の完全版
+import 'package:digimon_pendulum/models/digimon.dart';
+import 'package:digimon_pendulum/models/evolution_stage.dart';
+import 'package:flutter/material.dart';
 import 'package:home_widget/home_widget.dart';
-import '../models/digimon.dart';
 
 class WidgetService {
-  /// ウィジェットにデータを送信
   static Future<void> updateWidget(Digimon digimon) async {
     try {
-      await HomeWidget.saveWidgetData('name', digimon.name);
-      await HomeWidget.saveWidgetData('level', digimon.level);
-      await HomeWidget.saveWidgetData('coins', digimon.coins);
-      await HomeWidget.saveWidgetData('mood', digimon.mood);
-      await HomeWidget.saveWidgetData('poopCount', digimon.poopCount);
-
-      // 冒険データ追加
-      await HomeWidget.saveWidgetData(
-        'adventureCoins',
-        digimon.adventure.coinsCollected,
+      // デジモン基本情報
+      await HomeWidget.saveWidgetData<String>('digimon_name', digimon.name);
+      await HomeWidget.saveWidgetData<int>(
+        'evolution_stage',
+        digimon.evolutionStage.index,
       );
-      await HomeWidget.saveWidgetData('distance', digimon.adventure.distance);
-      await HomeWidget.saveWidgetData('battleWins', digimon.battleWins);
+      await HomeWidget.saveWidgetData<int>(
+        'evolution_color',
+        digimon.evolutionStage.colorValue,
+      );
+
+      // 冒険コイン（未回収分）を保存
+      await HomeWidget.saveWidgetData<int>(
+        'adventure_coins',
+        digimon.adventure.coinsCollected,  // ✅ 変更: 冒険で増えた分
+      );
+
+      // 機嫌状態（ビジュアル用）
+      await HomeWidget.saveWidgetData<int>('digimon_mood', digimon.mood);
+      
+      // うんち数
+      await HomeWidget.saveWidgetData<int>(
+        'digimon_poop',
+        digimon.poopCount,
+      );
+
+      // イベント状態
+      await HomeWidget.saveWidgetData<bool>(
+        'can_evolve',
+        digimon.canEvolve(),
+      );
+
+      // ウィジェットを更新
       await HomeWidget.updateWidget(
-        name: 'HomeWidgetProvider',
-        androidName: 'HomeWidgetProvider',
+        androidName: 'DigimonWidgetProvider',
+        iOSName: 'DigimonWidget',
       );
     } catch (e) {
-      // debugPrint('ウィジェット更新エラー: $e');
+      debugPrint('Widget update error: $e');
     }
   }
 
-  /// ウィジェットのアクションを登録
   static Future<void> registerCallbacks() async {
-    // コイン追加のコールバック
-    HomeWidget.setAppGroupId('digimon_widget_group');
-
-    HomeWidget.registerInteractivityCallback(backgroundCallback);
+    await HomeWidget.registerInteractivityCallback(
+      backgroundCallback,
+    );
   }
+}
 
-  /// バックグラウンドで実行されるコールバック
-  @pragma('vm:entry-point')
-  static Future<void> backgroundCallback(Uri? uri) async {
-    if (uri?.host == 'addcoin') {
-      // コイン追加処理
-      // debugPrint('コイン追加');
-    } else if (uri?.host == 'cleanpoop') {
-      // うんち掃除処理
-      // debugPrint('うんち掃除');
-    }
-  }
+@pragma('vm:entry-point')
+void backgroundCallback(Uri? uri) async {
+  if (uri == null) return;
+  debugPrint('Widget clicked - opening app');
 }
